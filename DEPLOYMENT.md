@@ -1,89 +1,127 @@
-# Vercel Deployment Guide for Anvaya
+# Full-Stack Vercel Deployment Guide for Anvaya
 
-## Quick Setup
+## 🚀 Complete Full-Stack Deployment
 
-### 1. Install Vercel CLI (Optional)
-```bash
-npm i -g vercel
-```
+Deploy both frontend and backend to Vercel as a unified application.
 
-### 2. Deploy via Vercel Dashboard
-1. Go to [vercel.com](https://vercel.com)
-2. Sign in with GitHub
-3. Import your Anvaya repository
-4. Set **Root Directory** to `frontend`
-5. Framework will auto-detect as **Vite**
-6. Deploy!
+### Quick Setup
 
-### 3. Deploy via CLI (Alternative)
-```bash
-cd frontend
-vercel
-```
+1. **Go to [vercel.com](https://vercel.com)** and sign in with GitHub
+2. **Import your `Karnav018/Anvaya` repository** 
+3. **Root Directory**: Leave as **root** (not frontend!)
+4. **Framework**: Will auto-detect as **Other**
+5. **Add Environment Variables** (see below)
+6. **Deploy!**
 
-## Configuration
+## Environment Variables
 
-### Environment Variables
 Add these in Vercel dashboard (Settings > Environment Variables):
 
-**Production:**
-- `VITE_API_URL` = `https://your-backend-api-url.com/api`
+### Required Variables:
+- `DATABASE_URL` = `postgresql://user:password@host:5432/dbname` 
+- `JWT_SECRET` = `your-secure-256-bit-secret`
+- `APP_URL` = `https://your-project.vercel.app`
+- `FRONTEND_URL` = `https://your-project.vercel.app`
+- `ENVIRONMENT` = `production`
 
-**Development:**
-- `VITE_API_URL` = `http://localhost:8000/api`
+### Optional Variables:
+- `JWT_ALGORITHM` = `HS256`
+- `JWT_EXPIRE_MINUTES` = `10080`
+- `LOG_LEVEL` = `INFO`
 
-### Backend Deployment Options
+## How It Works
 
-Since you have a FastAPI backend, consider these options:
+### Architecture:
+- **Frontend**: `https://your-app.vercel.app` (React/Vite)
+- **Backend API**: `https://your-app.vercel.app/api` (FastAPI serverless)
+- **Database**: External PostgreSQL (Neon/Supabase recommended)
 
-#### Option 1: Railway (Recommended)
-- Easy FastAPI deployment
-- Free tier available
-- Auto-deploys from GitHub
+### File Structure:
+```
+anvaya/
+├── frontend/          # React app (builds to root)
+├── backend/           # FastAPI app source
+├── api/
+│   └── index.py      # Vercel serverless entry point
+├── vercel.json       # Deployment configuration
+└── requirements.txt  # Python dependencies
+```
 
-#### Option 2: Render
-- Good for Python apps
-- Free tier includes database
-- Simple setup
+## Database Options
 
-#### Option 3: Vercel Serverless Functions
-- Convert FastAPI routes to serverless functions
-- Keep everything on Vercel
-- May require restructuring
+Since Vercel is serverless, you need an external database:
 
-### Domain Setup
-1. In Vercel dashboard, go to your project
-2. Click **Settings** > **Domains** 
-3. Add your custom domain
-4. Update DNS records as instructed
+### Option 1: Neon (Recommended)
+- **Free tier**: 512MB storage
+- **URL**: [neon.tech](https://neon.tech)
+- **PostgreSQL compatible**
+- **Serverless-friendly**
 
-## Performance Notes
+### Option 2: Supabase  
+- **Free tier**: 500MB storage
+- **URL**: [supabase.com](https://supabase.com)
+- **PostgreSQL with extras**
 
-With our optimizations:
-- Bundle size: ~700KB (was 4.3MB)
-- Lazy loading: Components load on demand
-- Caching: Static assets cached for 1 year
-- Security headers: XSS protection, content type sniffing prevention
+### Option 3: PlanetScale
+- **MySQL-compatible**
+- **Good free tier**
+
+## Deployment Steps
+
+1. **Deploy to Vercel**:
+   - Import repository
+   - Set environment variables
+   - Deploy
+
+2. **Set up Database**:
+   - Create database on Neon/Supabase
+   - Update `DATABASE_URL` in Vercel
+   - Database tables will auto-create on first run
+
+3. **Test**:
+   - Frontend: `https://your-app.vercel.app`
+   - API Health: `https://your-app.vercel.app/api/health`
+   - Login: Create account and test auth
+
+## Performance Benefits
+
+- **Single domain**: No CORS issues
+- **Edge deployment**: Global CDN
+- **Serverless scaling**: Auto-scales with demand
+- **Optimized bundle**: 700KB frontend (was 4.3MB)
 
 ## Troubleshooting
 
-### Build Fails
-- Check all imports are valid
-- Ensure TypeScript compiles locally first
-- Check for environment variable issues
+### Build Issues
+- Check Python requirements are correct
+- Verify frontend builds locally first
+- Check environment variables are set
 
-### Routing Issues
-- SPA routing handled by `vercel.json` rewrites
-- All non-API routes redirect to `index.html`
+### API Issues  
+- Test API endpoint: `/api/health`
+- Check database connection
+- Verify JWT_SECRET is set
 
-### API Connection Issues
-- Verify `VITE_API_URL` is set correctly
-- Check CORS settings in FastAPI backend
-- Ensure backend is accessible from frontend domain
+### Database Issues
+- Ensure DATABASE_URL is correct
+- Check database is accessible from internet
+- Verify credentials
 
-## Next Steps
-1. Deploy frontend to Vercel
-2. Choose and deploy backend (Railway/Render recommended)
-3. Update `VITE_API_URL` with backend URL
-4. Test full functionality
-5. Set up custom domain (optional)
+## Cost Estimate
+
+**Free Tier Limits:**
+- **Vercel**: 100GB bandwidth, 100 hours serverless
+- **Neon**: 512MB storage, 1 database
+- **Total**: $0/month for small projects
+
+**Paid Tiers** (if needed):
+- **Vercel Pro**: $20/month (team features)
+- **Neon Pro**: $19/month (more storage/compute)
+
+## Security Notes
+
+- All traffic is HTTPS
+- JWT tokens for authentication
+- Environment variables secured
+- CORS properly configured
+- Rate limiting included
