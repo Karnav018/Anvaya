@@ -12,6 +12,14 @@ const {{ route.safe_name }}Router = require('./routes/{{ route.file_name }}');
 app.use('{{ route.path }}', {{ route.safe_name }}Router);
 {% endfor %}
 
+{% if has_cron %}
+// Scheduled Jobs
+{% for job in cron_jobs %}
+const {{ job.safe_name }}Job = require('./routes/{{ job.file_name }}');
+cron.schedule('{{ job.cron_schedule }}', {{ job.safe_name }}Job);
+{% endfor %}
+{% endif %}
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', generated_by: 'Anvaya Visual API Builder' });
 });

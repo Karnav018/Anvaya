@@ -11,6 +11,13 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
 } from 'reactflow';
+import dagre from 'dagre';
+
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+const nodeWidth = 250;
+const nodeHeight = 80;
 
 export interface Snapshot {
   nodes: Node[];
@@ -45,6 +52,7 @@ export interface CanvasState {
   loadBlueprint: (blueprint: any) => void;
   getBlueprintPayload: () => any;
   setElements: (nodes: Node[], edges: Edge[]) => void;
+  layoutNodes: (direction?: 'TB' | 'LR') => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
@@ -185,5 +193,36 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         edges,
       }
     };
+  },
+
+  layoutNodes: (direction = 'TB') => {
+    const { nodes, edges } = get();
+    const g = new dagre.graphlib.Graph();
+    g.setGraph({ rankdir: direction, nodesep: 100, ranksep: 100 });
+    g.setDefaultEdgeLabel(() => ({}));
+
+    nodes.forEach((node) => {
+      g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    });
+
+    edges.forEach((edge) => {
+      g.setEdge(edge.source, edge.target);
+    });
+
+    dagre.layout(g);
+
+    const layoutedNodes = nodes.map((node) => {
+      const nodeWithPosition = g.node(node.id);
+      return {
+        ...node,
+        position: {
+          x: nodeWithPosition.x - nodeWidth / 2,
+          y: nodeWithPosition.y - nodeHeight / 2,
+        },
+      };
+    });
+
+    get().pushHistory();
+    set({ nodes: layoutedNodes });
   },
 }));

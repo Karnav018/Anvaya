@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { Wand2 } from 'lucide-react';
 import ReactFlow, {
   Background,
   Controls,
@@ -8,7 +9,7 @@ import ReactFlow, {
 import type { Node, Connection } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useCanvasStore } from '../../store/canvasStore';
-import { RouteBlock, AuthBlock, DatabaseBlock, MiddlewareBlock, ResponseBlock, FetchBlock, CacheBlock, EmailBlock, UploadBlock, AIBlock, PaymentBlock } from '../blocks/CustomNodes';
+import { RouteBlock, AuthBlock, DatabaseBlock, MiddlewareBlock, ResponseBlock, FetchBlock, CacheBlock, EmailBlock, UploadBlock, AIBlock, PaymentBlock, CronBlock } from '../blocks/CustomNodes';
 
 const nodeTypes = {
   route: RouteBlock,
@@ -22,6 +23,7 @@ const nodeTypes = {
   upload: UploadBlock,
   ai: AIBlock,
   payment: PaymentBlock,
+  cron: CronBlock,
 };
 
 export function AnvayaCanvas() {
@@ -34,6 +36,7 @@ export function AnvayaCanvas() {
     addNode,
     setSelectedNode,
     pushHistory,
+    layoutNodes,
   } = useCanvasStore();
 
   const handleConnect = useCallback(
@@ -141,7 +144,18 @@ export function AnvayaCanvas() {
         fitView
         proOptions={{ hideAttribution: true }}
       >
+        <div className="absolute top-4 left-4 z-50 flex gap-2">
+          <button
+            onClick={() => layoutNodes('TB')}
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-900/80 backdrop-blur-md border border-white/10 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all shadow-xl group"
+            title="Auto-layout Nodes"
+          >
+            <Wand2 className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Magic Layout</span>
+          </button>
+        </div>
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#3f3f46" />
+
         <Controls className="bg-zinc-900 border border-white/10 rounded-xl overflow-hidden [&>button]:border-b-white/10 [&>button]:text-zinc-400 hover:[&>button]:bg-zinc-800" />
         <MiniMap 
           nodeColor={(n) => {
@@ -175,6 +189,7 @@ function getDefaultDataForType(type: string) {
     case 'payment': return { mode: 'payment', product_id: 'prod_12345' };
     case 'middleware': return { name: 'CORS' };
     case 'response': return { status_code: 200, body: 'data' };
+    case 'cron': return { schedule: '0 0 * * *', description: 'Daily Sync' };
     default: return {};
   }
 }

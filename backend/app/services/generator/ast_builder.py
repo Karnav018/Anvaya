@@ -34,6 +34,9 @@ class RouteAST:
     has_payment: bool = False
     payment_mode: str = "payment"
     payment_product_id: str = ""
+    is_cron: bool = False
+    cron_schedule: str = "0 0 * * *"
+    cron_description: str = "Job"
 
 
 @dataclass
@@ -51,6 +54,8 @@ class ProjectAST:
     has_multer: bool = False
     has_openai: bool = False
     has_stripe: bool = False
+    has_cron: bool = False
+    cron_jobs: list[RouteAST] = field(default_factory=list)
 
 
 def slugify(name: str) -> str:
@@ -155,8 +160,28 @@ def build_ast(sorted_nodes: list[CanvasNode], project_name: str) -> ProjectAST:
         elif t == "response" and current_route:
             current_route.response_status = d.get("status_code", 200)
             current_route.response_body = d.get("body", "data")
-            ast.routes.append(current_route)
+            if getattr(current_route, 'is_cron', False):
+                ast.cron_jobs.append(current_route)
+            else:
+                ast.routes.append(current_route)
             current_route = None
+
+        elif t == "cron":
+            sched = d.get("schedule", "0 0 * * *")
+            desc = d.get("description", "Scheduled Task")
+            file_name = desc.lower().replace(" ", "-") or "job"
+            safe_name = file_name.replace("-", "_")
+
+            current_route = RouteAST(
+                method="JOB",
+                path=sched,
+                file_name=file_name,
+                safe_name=safe_name,
+                is_cron=True,
+                cron_schedule=sched,
+                cron_description=desc
+            )
+            ast.has_cron = True
 
     ast.models = list(models_seen)
     ast.env_vars = ["PORT", *list(env_vars_seen)]

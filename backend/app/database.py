@@ -6,13 +6,21 @@ pool: asyncpg.Pool | None = None
 
 async def init_db() -> None:
     global pool
-    pool = await asyncpg.create_pool(
-        dsn=settings.DATABASE_URL,
-        min_size=1,
-        max_size=10,
-        command_timeout=30,
-    )
-    await run_migrations()
+    try:
+        # Neon/Vercel typically require SSL
+        pool = await asyncpg.create_pool(
+            dsn=settings.DATABASE_URL,
+            min_size=1,
+            max_size=5,
+            command_timeout=30,
+            ssl="require" if "neon.tech" in settings.DATABASE_URL else None
+        )
+        await run_migrations()
+        print("Database connected successfully")
+    except Exception as e:
+        print(f"Database connection failed: {e}")
+        # We don't re-raise here so the API can still start and serve health checks
+        pool = None
 
 
 async def close_db() -> None:

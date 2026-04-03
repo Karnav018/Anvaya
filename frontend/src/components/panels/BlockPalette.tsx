@@ -1,4 +1,4 @@
-import { Network, Database, Lock, Combine, Send, Globe, HardDrive, Mail, CloudUpload, BrainCircuit, CreditCard } from 'lucide-react';
+import { Network, Database, Lock, Combine, Send, Globe, HardDrive, Mail, CloudUpload, BrainCircuit, CreditCard, Clock } from 'lucide-react';
 
 export function BlockPalette() {
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
@@ -14,6 +14,7 @@ export function BlockPalette() {
     { type: 'upload', label: 'Storage', icon: CloudUpload, color: 'text-sky-500 border-sky-500/30 hover:border-sky-500' },
     { type: 'ai', label: 'AI Process', icon: BrainCircuit, color: 'text-fuchsia-500 border-fuchsia-500/30 hover:border-fuchsia-500' },
     { type: 'payment', label: 'Payment', icon: CreditCard, color: 'text-indigo-500 border-indigo-500/30 hover:border-indigo-500' },
+    { type: 'cron', label: 'Scheduler', icon: Clock, color: 'text-cyan-400 border-cyan-400/30 hover:border-cyan-400' },
     { type: 'fetch', label: 'Fetch', icon: Globe, color: 'text-cyan-500 border-cyan-500/30 hover:border-cyan-500' },
     { type: 'cache', label: 'Cache', icon: HardDrive, color: 'text-emerald-500 border-emerald-500/30 hover:border-emerald-500' },
     { type: 'middleware', label: 'Middleware', icon: Combine, color: 'text-purple-500 border-purple-500/30 hover:border-purple-500' },

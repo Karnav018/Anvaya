@@ -1,16 +1,8 @@
-import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
+import { apiInstance } from './api-instance';
 
-const getBaseURL = () => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  // Fallback to localhost in dev, and /api in production
-  return import.meta.env.DEV ? 'http://localhost:8000' : '/api';
-};
-
-export const api = axios.create({
-  baseURL: getBaseURL(),
-});
+export const api = apiInstance;
 
 // Automatically attach Bearer token and trigger loading bar
 api.interceptors.request.use((config) => {

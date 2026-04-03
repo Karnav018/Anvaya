@@ -1,5 +1,10 @@
 const express = require('express');
+{% if not route.is_cron %}
 const router = express.Router();
+{% endif %}
+{% if has_cron %}
+const cron = require('node-cron');
+{% endif %}
 {% if route.has_auth %}
 const { {% if route.auth_strategy == 'jwt' %}verifyJWT{% else %}verifyApiKey{% endif %} } = require('../middleware/auth');
 {% endif %}
@@ -44,10 +49,20 @@ const upload = multer({
 });
 {% endif %}
 
+{% if not route.is_cron %}
 router.{{ route.method | lower }}('/', 
 {% if route.has_auth %}{% if route.auth_strategy == 'jwt' %}verifyJWT{% else %}verifyApiKey{% endif %}, {% endif %}
 {% if route.has_upload %}upload.single('file'), {% endif %}
 async (req, res) => {
+{% else %}
+module.exports = async () => {
+    // Mock req/res for Cron context
+    const req = { body: {}, params: {}, query: {} };
+    const res = { 
+      status: () => res, 
+      json: (d) => console.log('[Cron Job {{ route.cron_description }} Output]:', d) 
+    };
+{% endif %}
   try {
     {% if route.has_redis %}
     const cacheKey = {{ route.cache_key }};
@@ -173,8 +188,16 @@ async (req, res) => {
     );
   } catch (err) {
     console.error(err);
+    {% if not route.is_cron %}
     res.status(500).json({ error: err.message });
+    {% endif %}
   }
+{% if not route.is_cron %}
 });
+{% else %}
+};
+{% endif %}
 
+{% if not route.is_cron %}
 module.exports = router;
+{% endif %}

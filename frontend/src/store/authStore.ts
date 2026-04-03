@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { api } from '../lib/api';
+import { apiInstance } from '../lib/api-instance';
 
 export interface User {
   id: string;
@@ -31,7 +31,9 @@ export const useAuthStore = create<AuthState>()(
         try {
           // If we have a token but no user, or just want to fresh our data
           if (get().token) {
-            const res = await api.get('/auth/me');
+            const res = await apiInstance.get('/auth/me', {
+              headers: { Authorization: `Bearer ${get().token}` }
+            });
             set({ user: res.data });
           }
         } catch (error) {
