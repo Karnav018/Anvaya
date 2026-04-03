@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db, close_db
-from app.routers import auth, projects, blueprints, generate
+from app.routers import auth, projects, blueprints, generate, debug
 from app.config import settings
 from app.middleware.rate_limit import setup_rate_limiting
 from app.middleware.security_headers import SecurityHeadersMiddleware
@@ -47,6 +47,7 @@ app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(blueprints.router)
 app.include_router(generate.router)
+app.include_router(debug.router)
 
 
 @app.get("/", tags=["Health"])
