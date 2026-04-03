@@ -1,5 +1,5 @@
 import { Handle, Position } from 'reactflow';
-import { Network, Database, Lock, Combine, Send, Globe, HardDrive, Mail, CloudUpload, BrainCircuit, CreditCard } from 'lucide-react';
+import { Network, Database, Lock, Combine, Send, Globe, HardDrive, Mail, CloudUpload, BrainCircuit, CreditCard, Clock } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const NodeWrapper = ({ 
@@ -239,6 +239,25 @@ export function PaymentBlock({ data, selected }: any) {
         <div className="mt-1 text-[10px] font-semibold text-[#73757d] uppercase tracking-wider">prod_{data.product_id?.slice(0,6) || 'xxx...'}</div>
       </div>
       <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-[#a28efc] !border-none !-ml-1" />
+      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-[#a28efc] !border-none !-mr-1" />
+    </NodeWrapper>
+  );
+}
+
+// 12. CRON BLOCK
+export function CronBlock({ data, selected }: any) {
+  return (
+    <NodeWrapper selected={selected}>
+      <div className="p-3 bg-[#161a21]/50 border-b border-[#22262f] flex items-center gap-2">
+        <Clock className="w-3.5 h-3.5 text-[#a3a6ff]" />
+        <span className="font-semibold text-xs tracking-tight text-[#ecedf6]">Cron Scheduler</span>
+      </div>
+      <div className="p-3">
+        <div className="text-[13px] font-mono text-[#ecedf6] mb-1.5">
+          {data.schedule || '0 0 * * *'}
+        </div>
+        <div className="text-[10px] uppercase font-bold text-[#73757d] tracking-widest">{data.description || 'RECURRING JOB'}</div>
+      </div>
       <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-[#a28efc] !border-none !-mr-1" />
     </NodeWrapper>
   );
