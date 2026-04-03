@@ -1,0 +1,11 @@
+{
+  "name": "anvaya-monorepo",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "build": "npm run build --prefix frontend"
+  }
+}
