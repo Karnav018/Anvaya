@@ -1,0 +1,180 @@
+const express = require('express');
+const router = express.Router();
+{% if route.has_auth %}
+const { {% if route.auth_strategy == 'jwt' %}verifyJWT{% else %}verifyApiKey{% endif %} } = require('../middleware/auth');
+{% endif %}
+{% if route.has_database %}
+const {{ route.db_model }} = require('../models/{{ route.db_model }}');
+{% endif %}
+{% if route.has_axios %}
+const axios = require('axios');
+{% endif %}
+{% if route.has_redis %}
+const { createClient } = require('redis');
+const redisClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+redisClient.connect().catch(console.error);
+{% endif %}
+{% if route.has_email %}
+const nodemailer = require('nodemailer');
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+});
+{% endif %}
+{% if route.has_openai %}
+const OpenAI = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+{% endif %}
+{% if route.has_stripe %}
+const Stripe = require('stripe');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+{% endif %}
+{% if route.has_upload %}
+const multer = require('multer');
+const { S3Client } = require('@aws-sdk/client-s3');
+const multerS3 = require('multer-s3');
+const s3 = new S3Client({ region: process.env.AWS_REGION });
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: '{{ route.upload_bucket }}',
+    metadata: function (req, file, cb) { cb(null, { fieldName: file.fieldname }); },
+    key: function (req, file, cb) { cb(null, Date.now().toString() + '-' + file.originalname); }
+  })
+});
+{% endif %}
+
+router.{{ route.method | lower }}('/', 
+{% if route.has_auth %}{% if route.auth_strategy == 'jwt' %}verifyJWT{% else %}verifyApiKey{% endif %}, {% endif %}
+{% if route.has_upload %}upload.single('file'), {% endif %}
+async (req, res) => {
+  try {
+    {% if route.has_redis %}
+    const cacheKey = {{ route.cache_key }};
+    try {
+      const cached = await redisClient.get(cacheKey);
+      if (cached) return res.status(200).json(JSON.parse(cached));
+    } catch (err) {}
+    {% endif %}
+
+    {% if route.has_database %}
+    {% if route.db_action == 'findAll' %}
+    const {{ route.db_model | lower }}s = await {{ route.db_model }}.findAll();
+    const data = {{ route.db_model | lower }}s;
+    {% elif route.db_action == 'findOne' %}
+    const { id } = req.params;
+    const data = await {{ route.db_model }}.findByPk(id);
+    if (!data) return res.status(404).json({ error: '{{ route.db_model }} not found' });
+    {% elif route.db_action == 'create' %}
+    const data = await {{ route.db_model }}.create(req.body);
+    {% elif route.db_action == 'update' %}
+    const { id } = req.params;
+    const [updated] = await {{ route.db_model }}.update(req.body, { where: { id } });
+    const data = updated ? await {{ route.db_model }}.findByPk(id) : null;
+    if (!data) return res.status(404).json({ error: '{{ route.db_model }} not found' });
+    {% elif route.db_action == 'delete' %}
+    const { id } = req.params;
+    const deleted = await {{ route.db_model }}.destroy({ where: { id } });
+    if (!deleted) return res.status(404).json({ error: '{{ route.db_model }} not found' });
+    const data = { message: '{{ route.db_model }} deleted successfully' };
+    {% endif %}
+    {% else %}
+    let data = { message: 'Success' };
+    {% endif %}
+
+    {% if route.has_fetch %}
+    try {
+      const fetchResp = await axios({
+        method: '{{ route.fetch_method }}',
+        url: '{{ route.fetch_url }}',
+        data: req.body
+      });
+      data.fetchResult = fetchResp.data;
+    } catch (apiErr) {
+      console.warn('Fetch node error:', apiErr.message);
+    }
+    {% endif %}
+
+    {% if route.has_ai %}
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: "{{ route.ai_prompt }}" }, { role: "user", content: JSON.stringify(data) }],
+      });
+      data.aiProcessing = completion.choices[0].message.content;
+    } catch (aiErr) {
+      console.warn('AI Processing error:', aiErr.message);
+      data.aiProcessing = "AI process skipped due to error";
+    }
+    {% endif %}
+
+    {% if route.has_email %}
+    try {
+      await transporter.sendMail({
+        from: '"Anvaya BaaS" <no-reply@anvaya.dev>',
+        to: {{ route.email_to }},
+        subject: "{{ route.email_subject }}",
+        text: `Data notification: ${JSON.stringify(data)}`
+      });
+      data.emailSent = true;
+    } catch (mailErr) {
+      console.warn('Email send error:', mailErr.message);
+    }
+    {% endif %}
+
+    {% if route.has_payment %}
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: { name: '{{ route.payment_product_id }}' },
+            unit_amount: 2000,
+          },
+          quantity: 1,
+        }],
+        mode: '{{ route.payment_mode }}',
+        success_url: 'http://localhost:3000/success',
+        cancel_url: 'http://localhost:3000/cancel',
+      });
+      data.paymentUrl = session.url;
+    } catch (stripeErr) {
+      console.warn('Stripe checkout error:', stripeErr.message);
+    }
+    {% endif %}
+
+    {% if route.has_upload %}
+    if (req.file) {
+      data.fileInfo = {
+        url: req.file.location,
+        key: req.file.key,
+        bucket: req.file.bucket
+      };
+    }
+    {% endif %}
+
+    {% if route.has_redis %}
+    try {
+      await redisClient.setEx(cacheKey, {{ route.cache_ttl }}, JSON.stringify(data));
+    } catch (err) {}
+    {% endif %}
+
+    res.status({{ route.response_status }}).json(
+      {% if route.response_body == 'data' %}
+      { success: true, data }
+      {% elif route.response_body == 'message' %}
+      { message: 'Operation successful' }
+      {% elif route.response_body == 'error' %}
+      { error: 'Something went wrong' }
+      {% else %}
+      data
+      {% endif %}
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;

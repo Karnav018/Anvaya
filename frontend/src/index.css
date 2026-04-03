@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0a0f;
+  --color-surface: #12121a;
+  --color-border: #1e1e2e;
+  --color-primary: #6366f1;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-white antialiased font-sans;
+  }
+}
+
+/* React Flow custom styling overrides to fit our dark theme */
+.react-flow__panel {
+  @apply bg-surface/80 backdrop-blur-md rounded-xl border border-border mt-4 ml-4 p-2;
+}
+
+.react-flow__controls-button {
+  @apply bg-transparent border-none text-white hover:bg-white/10 transition-colors;
+}
+
+/* Custom scrollbar for Editor */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full hover:bg-primary/50 transition-colors;
+}

@@ -1,0 +1,21 @@
+# Node.js
+frontend/node_modules
+frontend/dist
+frontend/.env
+frontend/.env.local
+
+# Python
+backend/venv
+backend/__pycache__
+backend/.env
+backend/*.zip
+backend/*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+
+# Vercel
+.vercel

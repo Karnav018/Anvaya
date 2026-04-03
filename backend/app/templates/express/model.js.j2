@@ -1,0 +1,17 @@
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../db');
+
+const {{ model }} = sequelize.define('{{ model }}', {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  },
+  createdAt: DataTypes.DATE,
+  updatedAt: DataTypes.DATE,
+}, {
+  tableName: '{{ model | lower }}s',
+  timestamps: true,
+});
+
+module.exports = {{ model }};

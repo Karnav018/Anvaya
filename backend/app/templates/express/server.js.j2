@@ -1,0 +1,21 @@
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(cors());
+{% for route in routes %}
+const {{ route.safe_name }}Router = require('./routes/{{ route.file_name }}');
+app.use('{{ route.path }}', {{ route.safe_name }}Router);
+{% endfor %}
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', generated_by: 'Anvaya Visual API Builder' });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
