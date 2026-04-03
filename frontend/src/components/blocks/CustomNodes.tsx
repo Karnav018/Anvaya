@@ -1,5 +1,5 @@
 import { Handle, Position } from 'reactflow';
-import { Network, Database, Lock, Combine, Send, Globe, HardDrive, Mail, CloudUpload, BrainCircuit, CreditCard } from 'lucide-react';
+import { Network, Database, Lock, Combine, Send, Globe, HardDrive, Mail, CloudUpload, BrainCircuit, CreditCard, Table, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const NodeWrapper = ({ 
@@ -240,6 +240,220 @@ export function PaymentBlock({ data, selected }: any) {
       </div>
       <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-[#a28efc] !border-none !-ml-1" />
       <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-[#a28efc] !border-none !-mr-1" />
+    </NodeWrapper>
+  );
+}
+
+// 12. SCHEMA BLOCK
+export function SchemaBlock({ data, selected }: any) {
+  const fieldsCount = data.fields?.length || 0;
+  const relationshipsCount = data.relationships?.length || 0;
+
+  return (
+    <NodeWrapper selected={selected}>
+      <div className="p-3 border-b border-gray-600/30">
+        <div className="flex items-center gap-2">
+          <Table className="w-4 h-4 text-blue-400" />
+          <span className="text-sm font-medium">Schema</span>
+        </div>
+      </div>
+      
+      <div className="p-3 space-y-2">
+        <div>
+          <span className="text-xs text-gray-400">Model:</span>
+          <div className="text-sm font-medium text-white mt-1">
+            {data.model || 'Untitled'}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-xs text-gray-400">Fields</span>
+            <div className="text-sm text-white">{fieldsCount}</div>
+          </div>
+          <div>
+            <span className="text-xs text-gray-400">Relations</span>
+            <div className="text-sm text-white">{relationshipsCount}</div>
+          </div>
+        </div>
+
+        {data.provider && (
+          <div className="mt-2 px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded">
+            {data.provider}
+          </div>
+        )}
+      </div>
+      
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-blue-400 !border-none !-ml-1" />
+      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-blue-400 !border-none !-mr-1" />
+    </NodeWrapper>
+  );
+}
+
+// 13. VALIDATION BLOCK
+export function ValidationBlock({ data, selected }: any) {
+  const fieldsCount = data.fields?.length || 0;
+  const rulesCount = data.fields?.reduce((total: number, field: any) => 
+    total + (field.rules?.length || 0), 0) || 0;
+
+  return (
+    <NodeWrapper selected={selected}>
+      <div className="p-3 border-b border-gray-600/30">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 text-green-400" />
+          <span className="text-sm font-medium">Validation</span>
+        </div>
+      </div>
+      
+      <div className="p-3 space-y-2">
+        <div>
+          <span className="text-xs text-gray-400">Location:</span>
+          <div className="text-sm font-medium text-white mt-1">
+            {data.location || 'body'}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-xs text-gray-400">Fields</span>
+            <div className="text-sm text-white">{fieldsCount}</div>
+          </div>
+          <div>
+            <span className="text-xs text-gray-400">Rules</span>
+            <div className="text-sm text-white">{rulesCount}</div>
+          </div>
+        </div>
+
+        {data.schema_reference && (
+          <div className="mt-2 px-2 py-1 bg-green-500/10 text-green-400 text-xs rounded">
+            ref: {data.schema_reference}
+          </div>
+        )}
+      </div>
+      
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-green-400 !border-none !-ml-1" />
+      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-green-400 !border-none !-mr-1" />
+    </NodeWrapper>
+  );
+}
+
+// 14. ERROR HANDLER BLOCK
+export function ErrorHandlerBlock({ data, selected }: any) {
+  const customErrorsCount = data.custom_errors?.length || 0;
+
+  return (
+    <NodeWrapper selected={selected}>
+      <div className="p-3 border-b border-gray-600/30">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-400" />
+          <span className="text-sm font-medium">Error Handler</span>
+        </div>
+      </div>
+      
+      <div className="p-3 space-y-2">
+        <div>
+          <span className="text-xs text-gray-400">Strategy:</span>
+          <div className="text-sm font-medium text-white mt-1">
+            {data.strategy || 'global'}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-xs text-gray-400">Custom Errors</span>
+            <div className="text-sm text-white">{customErrorsCount}</div>
+          </div>
+          <div>
+            <span className="text-xs text-gray-400">Format</span>
+            <div className="text-sm text-white">{data.error_response_format || 'standard'}</div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1 mt-2">
+          {data.log_errors && (
+            <div className="px-2 py-1 bg-red-500/10 text-red-400 text-xs rounded">
+              Logging
+            </div>
+          )}
+          {data.include_stack_trace && (
+            <div className="px-2 py-1 bg-orange-500/10 text-orange-400 text-xs rounded">
+              Stack Trace
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-red-400 !border-none !-ml-1" />
+      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-red-400 !border-none !-mr-1" />
+    </NodeWrapper>
+  );
+}
+
+// 15. RESPONSE SCHEMA BLOCK
+export function ResponseSchemaBlock({ data, selected }: any) {
+  const fieldsCount = data.fields?.length || 0;
+  const statusCodes = data.status_codes || [200];
+
+  return (
+    <NodeWrapper selected={selected}>
+      <div className="p-3 border-b border-gray-600/30">
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-purple-400" />
+          <span className="text-sm font-medium">Response Schema</span>
+        </div>
+      </div>
+      
+      <div className="p-3 space-y-2">
+        <div>
+          <span className="text-xs text-gray-400">Name:</span>
+          <div className="text-sm font-medium text-white mt-1">
+            {data.name || 'SuccessResponse'}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-xs text-gray-400">Fields</span>
+            <div className="text-sm text-white">{fieldsCount}</div>
+          </div>
+          <div>
+            <span className="text-xs text-gray-400">Format</span>
+            <div className="text-sm text-white">{data.format || 'standard'}</div>
+          </div>
+        </div>
+
+        <div className="mt-2">
+          <span className="text-xs text-gray-400">Status Codes:</span>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {statusCodes.slice(0, 3).map((code: number, index: number) => (
+              <div key={index} className="px-2 py-1 bg-purple-500/10 text-purple-400 text-xs rounded">
+                {code}
+              </div>
+            ))}
+            {statusCodes.length > 3 && (
+              <div className="px-2 py-1 bg-purple-500/10 text-purple-400 text-xs rounded">
+                +{statusCodes.length - 3}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1 mt-2">
+          {data.include_metadata && (
+            <div className="px-2 py-1 bg-purple-500/10 text-purple-400 text-xs rounded">
+              Metadata
+            </div>
+          )}
+          {data.cache_control && (
+            <div className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded">
+              Cached
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-purple-400 !border-none !-ml-1" />
+      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-purple-400 !border-none !-mr-1" />
     </NodeWrapper>
   );
 }

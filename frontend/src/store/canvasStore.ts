@@ -177,7 +177,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   getBlueprintPayload: () => {
-    const { nodes, edges, lastSavedVersion } = get();
+    const { nodes, edges } = get();
     return {
       canvas_json: {
         version: "1.0.0", // Semantic version

@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db, close_db
 from app.routers import auth, projects, blueprints, generate
 from app.config import settings
+from app.middleware.rate_limit import setup_rate_limiting
+from app.middleware.security_headers import SecurityHeadersMiddleware
 
 
 @asynccontextmanager
@@ -19,6 +21,12 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Security Headers Middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Rate Limiting
+limiter = setup_rate_limiting(app)
 
 # CORS — allow frontend origin
 app.add_middleware(

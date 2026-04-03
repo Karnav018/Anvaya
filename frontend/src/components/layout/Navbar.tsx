@@ -2,7 +2,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { LogOut, Code2 } from 'lucide-react';
 
-export function Navbar() {
+interface NavbarProps {
+  saveStatus?: 'saved' | 'saving' | 'unsaved';
+  lastSaved?: Date | null;
+}
+
+export function Navbar({ saveStatus, lastSaved }: NavbarProps = {}) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
@@ -21,6 +26,21 @@ export function Navbar() {
       </Link>
 
       <div className="flex items-center gap-6 text-sm">
+        {/* Save status indicator */}
+        {saveStatus && (
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className={`w-2 h-2 rounded-full ${
+              saveStatus === 'saved' ? 'bg-green-400' : 
+              saveStatus === 'saving' ? 'bg-yellow-400' : 'bg-red-400'
+            }`} />
+            {saveStatus === 'saved' && lastSaved && (
+              <span>Saved {lastSaved.toLocaleTimeString()}</span>
+            )}
+            {saveStatus === 'saving' && <span>Saving...</span>}
+            {saveStatus === 'unsaved' && <span>Unsaved changes</span>}
+          </div>
+        )}
+        
         <div className="flex flex-col items-end">
           <span className="font-medium text-white/90">{user?.name}</span>
           <span className="text-white/50 text-xs">

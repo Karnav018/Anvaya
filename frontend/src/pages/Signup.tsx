@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
+import { validateData, signupSchema } from '../lib/validation';
 import toast from 'react-hot-toast';
 
 export default function Signup() {
@@ -9,29 +10,55 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+    
+    // Prepare data
+    const signupData = { 
+      name: name.trim(), 
+      email: email.trim(), 
+      password 
+    };
+    
+    // Validate inputs
+    const validation = validateData(signupSchema, signupData);
+    if (!validation.success) {
+      const errorMap: Record<string, string> = {};
+      validation.errors?.forEach(error => {
+        errorMap[error.field] = error.message;
+      });
+      setErrors(errorMap);
+      return;
+    }
+    
     setLoading(true);
     
     try {
       // 1. Create account
       await toast.promise(
-        api.post('/auth/signup', { name, email, password }),
+        api.post('/auth/signup', validation.data),
         {
           loading: 'Creating account...',
-          success: 'Account created!',
+          success: 'Account created! 🎉',
           error: (err) => err.response?.data?.detail || 'Signup failed',
         }
       );
       
       // 2. Auto-login right after signup
-      const { data } = await api.post('/auth/login', { email, password });
-      setAuth(data.user, data.token);
-      
-      navigate('/dashboard');
+      if (validation.data) {
+        const { data } = await api.post('/auth/login', { 
+          email: validation.data.email, 
+          password: validation.data.password 
+        });
+        setAuth(data.user, data.token);
+        
+        navigate('/dashboard');
+      }
     } catch (err) {
       // Errors handled by toast
     } finally {
@@ -56,11 +83,16 @@ export default function Signup() {
             <input
               type="text"
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-white/20"
+              className={`w-full px-4 py-2.5 rounded-xl bg-background border transition-all placeholder:text-white/20 outline-none ${
+                errors.name ? 'border-red-500 focus:ring-red-500' : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
+              }`}
               placeholder="John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
+            {errors.name && (
+              <p className="text-red-400 text-xs mt-1">{errors.name}</p>
+            )}
           </div>
 
           <div>
@@ -68,11 +100,16 @@ export default function Signup() {
             <input
               type="email"
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-white/20"
+              className={`w-full px-4 py-2.5 rounded-xl bg-background border transition-all placeholder:text-white/20 outline-none ${
+                errors.email ? 'border-red-500 focus:ring-red-500' : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
+              }`}
               placeholder="you@domain.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+            {errors.email && (
+              <p className="text-red-400 text-xs mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -80,12 +117,19 @@ export default function Signup() {
             <input
               type="password"
               required
-              minLength={6}
-              className="w-full px-4 py-2.5 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-white/20"
+              className={`w-full px-4 py-2.5 rounded-xl bg-background border transition-all placeholder:text-white/20 outline-none ${
+                errors.password ? 'border-red-500 focus:ring-red-500' : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
+              }`}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            {errors.password && (
+              <p className="text-red-400 text-xs mt-1">{errors.password}</p>
+            )}
+            <p className="text-white/40 text-xs mt-1">
+              Must contain uppercase, lowercase, and number
+            </p>
           </div>
 
           <button

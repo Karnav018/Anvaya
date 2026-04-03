@@ -2,13 +2,14 @@ import { useCallback } from 'react';
 import ReactFlow, {
   Background,
   Controls,
-  MiniMap,
   BackgroundVariant,
 } from 'reactflow';
 import type { Node, Connection } from 'reactflow';
-import 'reactflow/dist/style.css';
+// Lazy load ReactFlow styles to avoid blocking
+import('reactflow/dist/style.css');
 import { useCanvasStore } from '../../store/canvasStore';
-import { RouteBlock, AuthBlock, DatabaseBlock, MiddlewareBlock, ResponseBlock, FetchBlock, CacheBlock, EmailBlock, UploadBlock, AIBlock, PaymentBlock } from '../blocks/CustomNodes';
+import { RouteBlock, AuthBlock, DatabaseBlock, MiddlewareBlock, ResponseBlock, FetchBlock, CacheBlock, EmailBlock, UploadBlock, AIBlock, PaymentBlock, SchemaBlock, ValidationBlock, ErrorHandlerBlock, ResponseSchemaBlock } from '../blocks/CustomNodes';
+import { CanvasEmptyState } from './CanvasEmptyState';
 
 const nodeTypes = {
   route: RouteBlock,
@@ -22,6 +23,10 @@ const nodeTypes = {
   upload: UploadBlock,
   ai: AIBlock,
   payment: PaymentBlock,
+  schema: SchemaBlock,
+  validation: ValidationBlock,
+  error_handler: ErrorHandlerBlock,
+  response_schema: ResponseSchemaBlock,
 };
 
 export function AnvayaCanvas() {
@@ -142,22 +147,11 @@ export function AnvayaCanvas() {
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#3f3f46" />
-        <Controls className="bg-zinc-900 border border-white/10 rounded-xl overflow-hidden [&>button]:border-b-white/10 [&>button]:text-zinc-400 hover:[&>button]:bg-zinc-800" />
-        <MiniMap 
-          nodeColor={(n) => {
-            switch(n.type) {
-              case 'route': return '#6366f1';
-              case 'auth': return '#eab308';
-              case 'database': return '#3b82f6';
-              case 'middleware': return '#a855f7';
-              case 'response': return '#f97316';
-              default: return '#eee';
-            }
-          }}
-          maskColor="rgba(10,10,15,0.7)"
-          className="bg-surface border border-border rounded-xl"
-        />
+        <Controls className="bg-zinc-900 border border-white/10 rounded-xl overflow-hidden [&>button]:border-b-white/10 [&>button]:text-white hover:[&>button]:bg-zinc-800 hover:[&>button]:text-blue-400" />
       </ReactFlow>
+      
+      {/* Show empty state guide when canvas is empty */}
+      {nodes.length === 0 && <CanvasEmptyState />}
     </div>
   );
 }

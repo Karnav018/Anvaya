@@ -4,4 +4,51 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  
+  build: {
+    // Optimize bundle size and loading
+    rollupOptions: {
+      output: {
+        // Code splitting for better caching
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor';
+            }
+            if (id.includes('lucide-react') || id.includes('react-hot-toast') || id.includes('framer-motion')) {
+              return 'ui';
+            }
+            if (id.includes('monaco-editor') || id.includes('reactflow') || id.includes('dagre')) {
+              return 'editor';
+            }
+            if (id.includes('axios') || id.includes('zustand') || id.includes('zod')) {
+              return 'utils';
+            }
+          }
+        }
+      }
+    },
+    
+    // Optimize chunk sizes
+    chunkSizeWarningLimit: 1000,
+    
+    // Optimize target for modern browsers
+    target: 'es2020',
+    
+    // No source maps in production
+    sourcemap: false
+  },
+  
+  // Optimize dependencies
+  optimizeDeps: {
+    include: [
+      'react', 
+      'react-dom', 
+      'react-router-dom',
+      'axios', 
+      'zustand',
+      'lucide-react',
+      'react-hot-toast'
+    ]
+  }
 })

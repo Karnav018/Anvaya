@@ -7,11 +7,61 @@ const {{ model }} = sequelize.define('{{ model }}', {
     autoIncrement: true,
     primaryKey: true,
   },
+  {%- if schema and schema.fields %}
+  {%- for field in schema.fields %}
+  {{ field.name }}: {
+    type: DataTypes.{% if field.type == 'string' %}STRING{% elif field.type == 'integer' %}INTEGER{% elif field.type == 'boolean' %}BOOLEAN{% elif field.type == 'datetime' %}DATE{% elif field.type == 'text' %}TEXT{% elif field.type == 'json' %}JSONB{% else %}STRING{% endif %},
+    {%- if not field.required %}
+    allowNull: true,
+    {%- else %}
+    allowNull: false,
+    {%- endif %}
+    {%- if field.unique %}
+    unique: true,
+    {%- endif %}
+    {%- if field.default %}
+    defaultValue: {% if field.type == 'string' or field.type == 'text' %}'{{ field.default }}'{% else %}{{ field.default }}{% endif %},
+    {%- endif %}
+    {%- if field.constraints %}
+    {%- for key, value in field.constraints.items() %}
+    {{ key }}: {{ value }},
+    {%- endfor %}
+    {%- endif %}
+  },
+  {%- endfor %}
+  {%- endif %}
+  {%- if not schema or schema.timestamps %}
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
+  {%- endif %}
 }, {
   tableName: '{{ model | lower }}s',
-  timestamps: true,
+  timestamps: {% if schema %}{{ schema.timestamps | lower }}{% else %}true{% endif %},
 });
+
+{%- if schema and schema.relationships %}
+
+// Relationships will be defined after all models are loaded
+{{ model }}.associate = (models) => {
+  {%- for rel in schema.relationships %}
+  {%- if rel.type == 'belongsTo' %}
+  {{ model }}.belongsTo(models.{{ rel.target_model }}{% if rel.foreign_key %}, { foreignKey: '{{ rel.foreign_key }}' }{% endif %});
+  {%- elif rel.type == 'hasMany' %}
+  {{ model }}.hasMany(models.{{ rel.target_model }}{% if rel.foreign_key %}, { foreignKey: '{{ rel.foreign_key }}' }{% endif %});
+  {%- elif rel.type == 'hasOne' %}
+  {{ model }}.hasOne(models.{{ rel.target_model }}{% if rel.foreign_key %}, { foreignKey: '{{ rel.foreign_key }}' }{% endif %});
+  {%- elif rel.type == 'belongsToMany' %}
+  {{ model }}.belongsToMany(models.{{ rel.target_model }}, {
+    {%- if rel.through_model %}
+    through: '{{ rel.through_model }}',
+    {%- endif %}
+    {%- if rel.foreign_key %}
+    foreignKey: '{{ rel.foreign_key }}',
+    {%- endif %}
+  });
+  {%- endif %}
+  {%- endfor %}
+};
+{%- endif %}
 
 module.exports = {{ model }};

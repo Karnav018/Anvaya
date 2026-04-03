@@ -73,8 +73,19 @@ def bundle_project(ast: ProjectAST) -> bytes:
         for route in ast.routes:
             zf.writestr(
                 f"{root}/routes/{route.file_name}.js",
-                _render("route.js.j2", route=route),
+                _render("route-enhanced.js.j2", route=route),
             )
+
+        # validators/ (route-specific validation schemas)
+        for route in ast.routes:
+            zf.writestr(
+                f"{root}/validators/{route.file_name}.js",
+                _render("validators/route-schema.js.j2", route=route),
+            )
+
+        # middleware/ (error handling and validation)
+        zf.writestr(f"{root}/middleware/errors.js", _render("middleware/errors.js.j2", error_handlers=ast.error_handlers))
+        zf.writestr(f"{root}/middleware/validation.js", _render("middleware/validation.js.j2"))
 
         # middleware/auth.js (if any auth used)
         if ast.has_jwt:
@@ -87,11 +98,21 @@ def bundle_project(ast: ProjectAST) -> bytes:
                 _render("auth.js.j2", env_var=auth_env),
             )
 
-        # models/
+        # models/ (enhanced models from schema data or basic models)
         for model in ast.models:
+            # Find corresponding schema for this model
+            schema = next((s for s in ast.schemas if s.model == model), None)
             zf.writestr(
                 f"{root}/models/{model}.js",
-                _render("model.js.j2", model=model),
+                _render("model.js.j2", model=model, schema=schema),
+            )
+
+        # tests/ (test files for each route)
+        zf.writestr(f"{root}/tests/setup.js", _render("tests/setup.js.j2"))
+        for route in ast.routes:
+            zf.writestr(
+                f"{root}/tests/{route.file_name}.test.js",
+                _render("tests/route.test.js.j2", route=route),
             )
 
         # db.js (database connection) — only if DB nodes used
