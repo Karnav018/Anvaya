@@ -16,11 +16,15 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "api/index.py"
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/assets/(.*)",
+      "destination": "/frontend/assets/$1"
     },
     {
       "source": "/(.*)",
-      "destination": "frontend/index.html"
+      "destination": "/frontend/index.html"
     }
   ]
 }
