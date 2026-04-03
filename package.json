@@ -6,6 +6,6 @@
     "backend"
   ],
   "scripts": {
-    "build": "npm run build --prefix frontend && mkdir -p dist && cp -r frontend/dist/* ./dist"
+    "build": "bash build.sh"
   }
 }
