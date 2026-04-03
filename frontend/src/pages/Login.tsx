@@ -2,25 +2,43 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
+import { validateData, loginSchema } from '../lib/validation';
 import toast from 'react-hot-toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+    
+    // Prepare data
+    const loginData = { email: email.trim(), password };
+    
+    // Validate inputs
+    const validation = validateData(loginSchema, loginData);
+    if (!validation.success) {
+      const errorMap: Record<string, string> = {};
+      validation.errors?.forEach(error => {
+        errorMap[error.field] = error.message;
+      });
+      setErrors(errorMap);
+      return;
+    }
+    
     setLoading(true);
     
     try {
       const { data } = await toast.promise(
-        api.post('/auth/login', { email, password }),
+        api.post('/auth/login', validation.data),
         {
           loading: 'Logging in...',
-          success: 'Welcome back!',
+          success: 'Welcome back! 🎉',
           error: (err) => err.response?.data?.detail || 'Invalid email or password',
         }
       );
@@ -51,11 +69,16 @@ export default function Login() {
             <input
               type="email"
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-white/20"
+              className={`w-full px-4 py-2.5 rounded-xl bg-background border transition-all placeholder:text-white/20 outline-none ${
+                errors.email ? 'border-red-500 focus:ring-red-500' : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
+              }`}
               placeholder="you@domain.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+            {errors.email && (
+              <p className="text-red-400 text-xs mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -63,11 +86,16 @@ export default function Login() {
             <input
               type="password"
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-white/20"
+              className={`w-full px-4 py-2.5 rounded-xl bg-background border transition-all placeholder:text-white/20 outline-none ${
+                errors.password ? 'border-red-500 focus:ring-red-500' : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
+              }`}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            {errors.password && (
+              <p className="text-red-400 text-xs mt-1">{errors.password}</p>
+            )}
           </div>
 
           <button

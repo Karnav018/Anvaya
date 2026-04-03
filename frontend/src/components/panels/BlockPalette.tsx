@@ -1,4 +1,4 @@
-import { Network, Database, Lock, Combine, Send, Globe, HardDrive, Mail, CloudUpload, BrainCircuit, CreditCard, Clock } from 'lucide-react';
+import { Network, Database, Lock, Combine, Send, Globe, HardDrive, Mail, CloudUpload, BrainCircuit, CreditCard, Table, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 
 export function BlockPalette() {
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
@@ -10,11 +10,14 @@ export function BlockPalette() {
     { type: 'route', label: 'Route', icon: Network, color: 'text-primary border-primary/30 hover:border-primary' },
     { type: 'auth', label: 'Auth', icon: Lock, color: 'text-yellow-500 border-yellow-500/30 hover:border-yellow-500' },
     { type: 'database', label: 'Database', icon: Database, color: 'text-blue-500 border-blue-500/30 hover:border-blue-500' },
+    { type: 'schema', label: 'Schema', icon: Table, color: 'text-blue-400 border-blue-400/30 hover:border-blue-400' },
+    { type: 'validation', label: 'Validation', icon: CheckCircle, color: 'text-green-400 border-green-400/30 hover:border-green-400' },
+    { type: 'error_handler', label: 'Error Handler', icon: AlertTriangle, color: 'text-red-400 border-red-400/30 hover:border-red-400' },
+    { type: 'response_schema', label: 'Response Schema', icon: FileText, color: 'text-purple-400 border-purple-400/30 hover:border-purple-400' },
     { type: 'email', label: 'Email', icon: Mail, color: 'text-rose-500 border-rose-500/30 hover:border-rose-500' },
     { type: 'upload', label: 'Storage', icon: CloudUpload, color: 'text-sky-500 border-sky-500/30 hover:border-sky-500' },
     { type: 'ai', label: 'AI Process', icon: BrainCircuit, color: 'text-fuchsia-500 border-fuchsia-500/30 hover:border-fuchsia-500' },
     { type: 'payment', label: 'Payment', icon: CreditCard, color: 'text-indigo-500 border-indigo-500/30 hover:border-indigo-500' },
-    { type: 'cron', label: 'Scheduler', icon: Clock, color: 'text-cyan-400 border-cyan-400/30 hover:border-cyan-400' },
     { type: 'fetch', label: 'Fetch', icon: Globe, color: 'text-cyan-500 border-cyan-500/30 hover:border-cyan-500' },
     { type: 'cache', label: 'Cache', icon: HardDrive, color: 'text-emerald-500 border-emerald-500/30 hover:border-emerald-500' },
     { type: 'middleware', label: 'Middleware', icon: Combine, color: 'text-purple-500 border-purple-500/30 hover:border-purple-500' },

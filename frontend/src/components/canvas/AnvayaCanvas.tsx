@@ -1,15 +1,15 @@
 import { useCallback } from 'react';
-import { Wand2 } from 'lucide-react';
 import ReactFlow, {
   Background,
   Controls,
-  MiniMap,
   BackgroundVariant,
 } from 'reactflow';
 import type { Node, Connection } from 'reactflow';
-import 'reactflow/dist/style.css';
+// Lazy load ReactFlow styles to avoid blocking
+import('reactflow/dist/style.css');
 import { useCanvasStore } from '../../store/canvasStore';
-import { RouteBlock, AuthBlock, DatabaseBlock, MiddlewareBlock, ResponseBlock, FetchBlock, CacheBlock, EmailBlock, UploadBlock, AIBlock, PaymentBlock, CronBlock } from '../blocks/CustomNodes';
+import { RouteBlock, AuthBlock, DatabaseBlock, MiddlewareBlock, ResponseBlock, FetchBlock, CacheBlock, EmailBlock, UploadBlock, AIBlock, PaymentBlock, SchemaBlock, ValidationBlock, ErrorHandlerBlock, ResponseSchemaBlock } from '../blocks/CustomNodes';
+import { CanvasEmptyState } from './CanvasEmptyState';
 
 const nodeTypes = {
   route: RouteBlock,
@@ -23,7 +23,10 @@ const nodeTypes = {
   upload: UploadBlock,
   ai: AIBlock,
   payment: PaymentBlock,
-  cron: CronBlock,
+  schema: SchemaBlock,
+  validation: ValidationBlock,
+  error_handler: ErrorHandlerBlock,
+  response_schema: ResponseSchemaBlock,
 };
 
 export function AnvayaCanvas() {
@@ -36,7 +39,6 @@ export function AnvayaCanvas() {
     addNode,
     setSelectedNode,
     pushHistory,
-    layoutNodes,
   } = useCanvasStore();
 
   const handleConnect = useCallback(
@@ -144,34 +146,12 @@ export function AnvayaCanvas() {
         fitView
         proOptions={{ hideAttribution: true }}
       >
-        <div className="absolute top-4 left-4 z-50 flex gap-2">
-          <button
-            onClick={() => layoutNodes('TB')}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-900/80 backdrop-blur-md border border-white/10 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all shadow-xl group"
-            title="Auto-layout Nodes"
-          >
-            <Wand2 className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Magic Layout</span>
-          </button>
-        </div>
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#3f3f46" />
-
-        <Controls className="bg-zinc-900 border border-white/10 rounded-xl overflow-hidden [&>button]:border-b-white/10 [&>button]:text-zinc-400 hover:[&>button]:bg-zinc-800" />
-        <MiniMap 
-          nodeColor={(n) => {
-            switch(n.type) {
-              case 'route': return '#6366f1';
-              case 'auth': return '#eab308';
-              case 'database': return '#3b82f6';
-              case 'middleware': return '#a855f7';
-              case 'response': return '#f97316';
-              default: return '#eee';
-            }
-          }}
-          maskColor="rgba(10,10,15,0.7)"
-          className="bg-surface border border-border rounded-xl"
-        />
+        <Controls className="bg-zinc-900 border border-white/10 rounded-xl overflow-hidden [&>button]:border-b-white/10 [&>button]:text-white hover:[&>button]:bg-zinc-800 hover:[&>button]:text-blue-400" />
       </ReactFlow>
+      
+      {/* Show empty state guide when canvas is empty */}
+      {nodes.length === 0 && <CanvasEmptyState />}
     </div>
   );
 }
@@ -189,7 +169,6 @@ function getDefaultDataForType(type: string) {
     case 'payment': return { mode: 'payment', product_id: 'prod_12345' };
     case 'middleware': return { name: 'CORS' };
     case 'response': return { status_code: 200, body: 'data' };
-    case 'cron': return { schedule: '0 0 * * *', description: 'Daily Sync' };
     default: return {};
   }
 }

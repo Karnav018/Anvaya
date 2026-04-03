@@ -1,15 +1,17 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from app.models.user import SignupRequest, LoginRequest, AuthResponse, UserResponse
 from app.core.security import hash_password, verify_password, create_token
 from app.core.deps import get_current_user
 from app.database import get_pool
+from app.middleware.rate_limit import limiter
 import uuid
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post("/signup", response_model=AuthResponse, status_code=201)
-async def signup(body: SignupRequest):
+@limiter.limit("100/minute")  # Stricter rate limit for auth endpoints
+async def signup(request: Request, body: SignupRequest):
     pool = await get_pool()
     async with pool.acquire() as conn:
         # Check if email already exists
@@ -40,7 +42,8 @@ async def signup(body: SignupRequest):
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(body: LoginRequest):
+@limiter.limit("100/minute")  # Stricter rate limit for auth endpoints
+async def login(request: Request, body: LoginRequest):
     pool = await get_pool()
     async with pool.acquire() as conn:
         user = await conn.fetchrow(

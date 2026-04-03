@@ -1,5 +1,94 @@
 from dataclasses import dataclass, field
 from app.models.blueprint import CanvasNode
+from typing import Optional
+
+
+@dataclass 
+class SchemaFieldAST:
+    name: str
+    type: str
+    required: bool
+    unique: bool
+    constraints: dict
+    default: Optional[str] = None
+
+
+@dataclass
+class SchemaRelationshipAST:
+    type: str
+    target_model: str
+    foreign_key: Optional[str] = None
+    through_model: Optional[str] = None
+    cascade_delete: bool = False
+
+
+@dataclass
+class SchemaAST:
+    model: str
+    provider: str
+    fields: list[SchemaFieldAST] = field(default_factory=list)
+    relationships: list[SchemaRelationshipAST] = field(default_factory=list)
+    timestamps: bool = True
+
+
+@dataclass
+class ValidationRuleAST:
+    type: str
+    value: Optional[str] = None
+    message: Optional[str] = None
+
+
+@dataclass
+class ValidationFieldAST:
+    name: str
+    type: str
+    rules: list[ValidationRuleAST] = field(default_factory=list)
+    optional: bool = False
+
+
+@dataclass
+class ValidationAST:
+    location: str
+    fields: list[ValidationFieldAST] = field(default_factory=list)
+    schema_reference: Optional[str] = None
+
+
+@dataclass
+class ErrorTypeAST:
+    name: str
+    status_code: int
+    message_template: str
+    log_level: str = "error"
+
+
+@dataclass
+class ErrorHandlerAST:
+    strategy: str
+    custom_errors: list[ErrorTypeAST] = field(default_factory=list)
+    fallback_message: str = "An error occurred"
+    include_stack_trace: bool = False
+    log_errors: bool = True
+    error_response_format: str = "standard"
+
+
+@dataclass
+class ResponseFieldAST:
+    name: str
+    type: str
+    description: Optional[str] = None
+    example: Optional[str] = None
+    required: bool = True
+
+
+@dataclass
+class ResponseSchemaAST:
+    name: str
+    status_codes: list[int] = field(default_factory=lambda: [200])
+    content_type: str = "application/json"
+    fields: list[ResponseFieldAST] = field(default_factory=list)
+    format: str = "standard"
+    include_metadata: bool = True
+    cache_control: Optional[str] = None
 
 
 @dataclass
@@ -34,9 +123,11 @@ class RouteAST:
     has_payment: bool = False
     payment_mode: str = "payment"
     payment_product_id: str = ""
-    is_cron: bool = False
-    cron_schedule: str = "0 0 * * *"
-    cron_description: str = "Job"
+    # NEW: Schema, validation, error handler, and response schema references
+    schema: Optional[SchemaAST] = None
+    validation: Optional[ValidationAST] = None
+    error_handler: Optional[ErrorHandlerAST] = None
+    response_schema: Optional[ResponseSchemaAST] = None
 
 
 @dataclass
@@ -45,6 +136,9 @@ class ProjectAST:
     project_slug: str
     routes: list[RouteAST] = field(default_factory=list)
     models: list[str] = field(default_factory=list)
+    schemas: list[SchemaAST] = field(default_factory=list)
+    error_handlers: list[ErrorHandlerAST] = field(default_factory=list)
+    response_schemas: list[ResponseSchemaAST] = field(default_factory=list)  # NEW
     env_vars: list[str] = field(default_factory=list)
     has_jwt: bool = False
     has_database: bool = False
@@ -54,8 +148,6 @@ class ProjectAST:
     has_multer: bool = False
     has_openai: bool = False
     has_stripe: bool = False
-    has_cron: bool = False
-    cron_jobs: list[RouteAST] = field(default_factory=list)
 
 
 def slugify(name: str) -> str:
@@ -69,9 +161,128 @@ def build_ast(sorted_nodes: list[CanvasNode], project_name: str) -> ProjectAST:
     )
 
     current_route: RouteAST | None = None
+    current_schema: SchemaAST | None = None
+    current_validation: ValidationAST | None = None
     models_seen: set[str] = set()
+    schemas_map: dict[str, SchemaAST] = {}  # node_id -> schema
+    validations_map: dict[str, ValidationAST] = {}  # node_id -> validation
+    error_handlers_map: dict[str, ErrorHandlerAST] = {}  # node_id -> error_handler
+    response_schemas_map: dict[str, ResponseSchemaAST] = {}  # node_id -> response_schema
     env_vars_seen: set[str] = set()
 
+    # First pass: Build schemas and validations
+    for node in sorted_nodes:
+        t = node.type
+        d = node.data
+
+        if t == "schema":
+            schema = SchemaAST(
+                model=d.get("model", "Model"),
+                provider=d.get("provider", "postgres"),
+                timestamps=d.get("timestamps", True),
+            )
+            
+            # Parse fields
+            for field_data in d.get("fields", []):
+                field = SchemaFieldAST(
+                    name=field_data.get("name", ""),
+                    type=field_data.get("type", "string"),
+                    required=field_data.get("required", True),
+                    unique=field_data.get("unique", False),
+                    constraints=field_data.get("constraints", {}),
+                    default=field_data.get("default"),
+                )
+                schema.fields.append(field)
+            
+            # Parse relationships
+            for rel_data in d.get("relationships", []):
+                relationship = SchemaRelationshipAST(
+                    type=rel_data.get("type", "hasMany"),
+                    target_model=rel_data.get("target_model", ""),
+                    foreign_key=rel_data.get("foreign_key"),
+                    through_model=rel_data.get("through_model"),
+                    cascade_delete=rel_data.get("cascade_delete", False),
+                )
+                schema.relationships.append(relationship)
+            
+            schemas_map[node.id] = schema
+            ast.schemas.append(schema)
+            models_seen.add(schema.model)
+
+        elif t == "validation":
+            validation = ValidationAST(
+                location=d.get("location", "body"),
+                schema_reference=d.get("schema_reference"),
+            )
+            
+            # Parse validation fields
+            for field_data in d.get("fields", []):
+                field = ValidationFieldAST(
+                    name=field_data.get("name", ""),
+                    type=field_data.get("type", "string"),
+                    optional=field_data.get("optional", False),
+                )
+                
+                # Parse validation rules
+                for rule_data in field_data.get("rules", []):
+                    rule = ValidationRuleAST(
+                        type=rule_data.get("type", "required"),
+                        value=rule_data.get("value"),
+                        message=rule_data.get("message"),
+                    )
+                    field.rules.append(rule)
+                
+                validation.fields.append(field)
+            
+            validations_map[node.id] = validation
+
+        elif t == "error_handler":
+            error_handler = ErrorHandlerAST(
+                strategy=d.get("strategy", "global"),
+                fallback_message=d.get("fallback_message", "An error occurred"),
+                include_stack_trace=d.get("include_stack_trace", False),
+                log_errors=d.get("log_errors", True),
+                error_response_format=d.get("error_response_format", "standard"),
+            )
+            
+            # Parse custom error types
+            for error_data in d.get("custom_errors", []):
+                error_type = ErrorTypeAST(
+                    name=error_data.get("name", ""),
+                    status_code=error_data.get("status_code", 500),
+                    message_template=error_data.get("message_template", ""),
+                    log_level=error_data.get("log_level", "error"),
+                )
+                error_handler.custom_errors.append(error_type)
+            
+            ast.error_handlers.append(error_handler)
+            error_handlers_map[node.id] = error_handler
+
+        elif t == "response_schema":
+            response_schema = ResponseSchemaAST(
+                name=d.get("name", "SuccessResponse"),
+                status_codes=d.get("status_codes", [200]),
+                content_type=d.get("content_type", "application/json"),
+                format=d.get("format", "standard"),
+                include_metadata=d.get("include_metadata", True),
+                cache_control=d.get("cache_control"),
+            )
+            
+            # Parse response fields
+            for field_data in d.get("fields", []):
+                field = ResponseFieldAST(
+                    name=field_data.get("name", ""),
+                    type=field_data.get("type", "string"),
+                    description=field_data.get("description"),
+                    example=field_data.get("example"),
+                    required=field_data.get("required", True),
+                )
+                response_schema.fields.append(field)
+            
+            ast.response_schemas.append(response_schema)
+            response_schemas_map[node.id] = response_schema
+
+    # Second pass: Build routes with references to schemas and validations  
     for node in sorted_nodes:
         t = node.type
         d = node.data
@@ -85,7 +296,12 @@ def build_ast(sorted_nodes: list[CanvasNode], project_name: str) -> ProjectAST:
                 method=d.get("method", "GET"),
                 path=path_val,
                 file_name=file_name,
-                safe_name=safe_name
+                safe_name=safe_name,
+                # Check for linked schema/validation/error_handler/response_schema (if edges point to them)
+                schema=schemas_map.get(d.get("schema_id")) if "schema_id" in d else None,
+                validation=validations_map.get(d.get("validation_id")) if "validation_id" in d else None,
+                error_handler=error_handlers_map.get(d.get("error_handler_id")) if "error_handler_id" in d else None,
+                response_schema=response_schemas_map.get(d.get("response_schema_id")) if "response_schema_id" in d else None,
             )
 
         elif t == "auth" and current_route:
@@ -160,28 +376,8 @@ def build_ast(sorted_nodes: list[CanvasNode], project_name: str) -> ProjectAST:
         elif t == "response" and current_route:
             current_route.response_status = d.get("status_code", 200)
             current_route.response_body = d.get("body", "data")
-            if getattr(current_route, 'is_cron', False):
-                ast.cron_jobs.append(current_route)
-            else:
-                ast.routes.append(current_route)
+            ast.routes.append(current_route)
             current_route = None
-
-        elif t == "cron":
-            sched = d.get("schedule", "0 0 * * *")
-            desc = d.get("description", "Scheduled Task")
-            file_name = desc.lower().replace(" ", "-") or "job"
-            safe_name = file_name.replace("-", "_")
-
-            current_route = RouteAST(
-                method="JOB",
-                path=sched,
-                file_name=file_name,
-                safe_name=safe_name,
-                is_cron=True,
-                cron_schedule=sched,
-                cron_description=desc
-            )
-            ast.has_cron = True
 
     ast.models = list(models_seen)
     ast.env_vars = ["PORT", *list(env_vars_seen)]

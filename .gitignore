@@ -19,3 +19,9 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Logs
+logs/
+
+#screenshots
+screenshots/
