@@ -28,6 +28,132 @@
   @apply border-red-400 focus:border-red-400 focus:ring-red-400/20;
 }
 
+/* ReactFlow Dark Theme Overrides */
+.react-flow {
+  background-color: #0f1218 !important;
+}
+
+.react-flow__controls {
+  background: rgba(16, 19, 26, 0.95) !important;
+  border: 1px solid #1c2028 !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4) !important;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  color: #a9abb3 !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  width: 36px !important;
+  height: 36px !important;
+  margin: 2px !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #1c2028 !important;
+  color: #ecedf6 !important;
+  transform: scale(1.05) !important;
+}
+
+.react-flow__controls-button:active {
+  transform: scale(0.95) !important;
+}
+
+.react-flow__controls-button svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.react-flow__minimap {
+  background: rgba(16, 19, 26, 0.95) !important;
+  border: 1px solid #1c2028 !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4) !important;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(13, 16, 22, 0.85) !important;
+  stroke: #1c2028 !important;
+  stroke-width: 1 !important;
+}
+
+.react-flow__minimap-node {
+  stroke: none !important;
+}
+
+/* Custom scrollbar for block palette */
+.block-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.block-scrollbar::-webkit-scrollbar-track {
+  background: #161a21;
+  border-radius: 3px;
+}
+
+.block-scrollbar::-webkit-scrollbar-thumb {
+  background: #22262f;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.block-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #2c3038;
+}
+
+/* Selection box styling */
+.react-flow__selection {
+  background: rgba(163, 166, 255, 0.1) !important;
+  border: 1px dashed #a3a6ff !important;
+}
+
+/* Edge styling */
+.react-flow__edge-path {
+  stroke: #a3a6ff !important;
+  stroke-width: 2 !important;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #8b8dff !important;
+  stroke-width: 3 !important;
+}
+
+/* Handle styling */
+.react-flow__handle {
+  background: #a3a6ff !important;
+  border: 2px solid #10131a !important;
+  width: 10px !important;
+  height: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-flow__handle:hover {
+  background: #8b8dff !important;
+  transform: scale(1.2) !important;
+  box-shadow: 0 0 0 4px rgba(163, 166, 255, 0.2) !important;
+}
+
+/* Connection line */
+.react-flow__connection-line {
+  stroke: #a3a6ff !important;
+  stroke-width: 2 !important;
+  stroke-dasharray: 5, 5 !important;
+}
+
+/* Node selection */
+.react-flow__node.selected {
+  box-shadow: 0 0 0 2px #a3a6ff !important;
+}
+
+/* Panel styling */
+.react-flow__panel {
+  background: transparent !important;
+}
+
 /* Enhanced Button Styling */
 .btn {
   @apply px-3 py-2 rounded-lg text-xs font-medium transition-all outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#10131a];
@@ -66,6 +192,26 @@
 .field-required::after {
   content: " *";
   @apply text-red-400;
+}
+
+/* ReactFlow Controls - Small Size Override */
+.react-flow__controls {
+  gap: 1px !important;
+  padding: 2px !important;
+}
+
+.react-flow__controls button {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  padding: 4px !important;
+  font-size: 12px !important;
+}
+
+.react-flow__controls button svg {
+  width: 12px !important;
+  height: 12px !important;
 }
 
 /* Enhanced card styling for complex fields */

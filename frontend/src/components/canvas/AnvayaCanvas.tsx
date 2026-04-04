@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import ReactFlow, {
   Background,
-  Controls,
   BackgroundVariant,
+  Controls,
 } from 'reactflow';
 import type { Node, Connection } from 'reactflow';
 // Lazy load ReactFlow styles to avoid blocking
@@ -147,7 +147,15 @@ export function AnvayaCanvas() {
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#3f3f46" />
-        <Controls className="bg-zinc-900 border border-white/10 rounded-xl overflow-hidden [&>button]:border-b-white/10 [&>button]:text-white hover:[&>button]:bg-zinc-800 hover:[&>button]:text-blue-400" />
+        
+        {/* Small ReactFlow Controls */}
+        <Controls 
+          className="!bg-[#10131a] !border !border-[#1c2028] !rounded-md !shadow-xl !text-[#a9abb3] 
+                     [&>button]:!w-6 [&>button]:!h-6 [&>button]:!min-w-0 [&>button]:!min-h-0
+                     [&>button]:!bg-transparent [&>button]:!border-[#1c2028] [&>button]:!text-[#a9abb3]
+                     [&>button:hover]:!bg-[#1c2028] [&>button:hover]:!text-[#ecedf6]
+                     [&>button>svg]:!w-3 [&>button>svg]:!h-3" 
+        />
       </ReactFlow>
       
       {/* Show empty state guide when canvas is empty */}
