@@ -7,7 +7,7 @@ pool: asyncpg.Pool | None = None
 async def init_db() -> None:
     global pool
     try:
-        # Neon/Vercel typically require SSL
+        # Use SSL for neon.tech databases
         pool = await asyncpg.create_pool(
             dsn=settings.DATABASE_URL,
             min_size=1,

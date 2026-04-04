@@ -16,14 +16,10 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-# Detect if we are on Vercel to set the root_path
-is_vercel = os.environ.get("VERCEL") == "1"
-
 app = FastAPI(
     title="Anvaya API",
     description="Backend for Anvaya — Visual API Builder",
     version="1.0.0",
-    root_path="/api" if is_vercel else "",
     lifespan=lifespan,
 )
 
