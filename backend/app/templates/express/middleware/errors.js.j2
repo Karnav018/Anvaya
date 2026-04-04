@@ -127,33 +127,6 @@ function errorHandler(err, req, res, next) {
   }
 
   // Prepare response based on configured format
-  {%- if error_handlers and error_handlers[0].error_response_format == 'json_api' %}
-  const response = {
-    errors: [{
-      status: statusCode.toString(),
-      code,
-      title: message,
-      detail: details ? JSON.stringify(details) : undefined,
-      source: {
-        parameter: req.path
-      }
-    }]
-  };
-  {%- elif error_handlers and error_handlers[0].error_response_format == 'custom' %}
-  const response = {
-    success: false,
-    error: {
-      code,
-      message,
-      statusCode
-    },
-    meta: {
-      timestamp: new Date().toISOString(),
-      path: req.path,
-      method: req.method
-    }
-  };
-  {%- else %}
   const response = {
     error: true,
     code,
@@ -162,35 +135,16 @@ function errorHandler(err, req, res, next) {
     path: req.path,
     method: req.method
   };
-  {%- endif %}
 
   // Add details if present
   if (details) {
-    {%- if error_handlers and error_handlers[0].error_response_format == 'json_api' %}
-    response.errors[0].meta = details;
-    {%- elif error_handlers and error_handlers[0].error_response_format == 'custom' %}
-    response.error.details = details;
-    {%- else %}
     response.details = details;
-    {%- endif %}
   }
 
   // Add stack trace in development
-  {%- if error_handlers and error_handlers[0].include_stack_trace %}
-  if (process.env.NODE_ENV === 'development') {
-    {%- if error_handlers and error_handlers[0].error_response_format == 'json_api' %}
-    response.errors[0].meta = { ...response.errors[0].meta, stack: err.stack };
-    {%- elif error_handlers and error_handlers[0].error_response_format == 'custom' %}
-    response.meta.stack = err.stack;
-    {%- else %}
-    response.stack = err.stack;
-    {%- endif %}
-  }
-  {%- else %}
   if (process.env.NODE_ENV === 'development') {
     response.stack = err.stack;
   }
-  {%- endif %}
 
   {%- if error_handlers and error_handlers[0].log_errors %}
   // Log error for monitoring
