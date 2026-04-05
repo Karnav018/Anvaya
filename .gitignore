@@ -26,3 +26,7 @@ logs/
 #screenshots
 screenshots/
 .env*.local
+
+
+#research
+research-paper/
