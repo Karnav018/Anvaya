@@ -37,10 +37,14 @@ services:
     healthCheckPath: /health
     autoDeploy: true
 
-    # Free tier doesn't allow `preDeployCommand`. Migrations run via the
-    # container's entrypoint.sh script (which then exec's gunicorn). Don't
-    # set dockerCommand here — it would override the ENTRYPOINT and we'd
-    # lose the migrate step.
+    # Free tier doesn't allow `preDeployCommand`. Migrations + gunicorn boot
+    # are handled by backend/entrypoint.sh inside the container.
+    #
+    # We MUST set dockerCommand explicitly (rather than relying on the
+    # Dockerfile's ENTRYPOINT) because Render's service config caches the
+    # previously-set dockerCommand. Removing this field from the YAML does
+    # NOT clear it from the dashboard — we have to overwrite it.
+    dockerCommand: ./entrypoint.sh
 
     envVars:
       # ── Static values (safe to commit) ────────────────────────────────
