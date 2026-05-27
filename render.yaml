@@ -50,9 +50,9 @@ services:
         generateValue: true
 
       # Required — fill in via dashboard after Neon + Upstash + Resend signup.
-      - key: postgresql://neondb_owner:npg_VS8tFBoAyi5b@ep-weathered-resonance-aj3z5a07-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - key: postgresql://neondb_owner:npg_01npXfRLUvwc@ep-weathered-resonance-aj3z5a07-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
         sync: false
-      - key: rediss://default:gQAAAAAAAhr_AAIgcDJjOTk1MDllZTQ2OGQ0Yjc3YjZjYmIwMjlhZjgyMTI1Ng@wealthy-fowl-137983.upstash.io:6379
+      - key: rediss://default:gQAAAAAAAhr_AAIgcDJhNzkwYTA1NWU3ZTY0YjlkYjAzMWQyY2YzMTk0ZWNjOQ@wealthy-fowl-137983.upstash.io:6379
         sync: false
       - key: https://anvaya.vercel.app
         sync: false
