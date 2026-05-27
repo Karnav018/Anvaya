@@ -226,3 +226,12 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set({ nodes: layoutedNodes });
   },
 }));
+
+// Testability shim: expose the canvas store on `window` in dev/test builds so
+// Playwright E2E specs can populate the canvas without simulating ReactFlow
+// drag-and-drop (which is famously flaky in headless browsers). This is
+// inert in production builds because `import.meta.env.PROD` is true there.
+if (typeof window !== 'undefined' && !import.meta.env.PROD) {
+  (window as unknown as { __canvasStore__?: typeof useCanvasStore }).__canvasStore__ =
+    useCanvasStore;
+}

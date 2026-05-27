@@ -8,9 +8,10 @@ interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  orgSlug: string;
 }
 
-export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
+export function CreateProjectModal({ isOpen, onClose, onSuccess, orgSlug }: CreateProjectModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +23,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
     setLoading(true);
 
     try {
-      await toast.promise(api.post('/projects', { name, description }), {
+      await toast.promise(api.post(`/o/${orgSlug}/projects`, { name, description }), {
         loading: 'Creating project...',
         success: '🎉 Project created successfully!',
         error: 'Failed to create project',

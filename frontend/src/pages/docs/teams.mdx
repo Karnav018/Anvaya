@@ -1,0 +1,38 @@
+# Teams & roles
+
+Anvaya is built around **organisations**. Every project lives inside one. On the Pro plan you can invite teammates with one of three roles.
+
+## Roles
+
+| Role | Can edit canvas | Can generate code | Can invite | Can manage billing |
+| --- | --- | --- | --- | --- |
+| **Owner** | yes | yes | yes | yes |
+| **Editor** | yes | yes | no | no |
+| **Viewer** | no | no | no | no |
+
+An organisation always has at least one owner. Transferring ownership is done from **Settings → Team**.
+
+## Invite flow
+
+1. Open **Settings → Team** in the sidebar.
+2. Click **Invite member**.
+3. Enter an email address and pick a role.
+4. The invitee receives an email with a one-time link. The link expires after seven days.
+
+If the invitee already has an Anvaya account, accepting the invite simply adds the organisation to their account picker. Otherwise they sign up first.
+
+## Role-based UI gating
+
+The sidebar and editor hide or disable actions based on the active role:
+
+- **Viewers** see the canvas read-only. Save, generate, and delete buttons are removed.
+- **Editors** have full canvas access but the **Billing** and **Team** screens are hidden.
+- **Owners** see everything.
+
+## Workspaces
+
+Each organisation can host any number of projects. A project belongs to one organisation and cannot be moved between them — duplicate the project and re-create it in the destination workspace instead.
+
+## Leaving an organisation
+
+Members can leave any organisation they are not the sole owner of from **Settings → Account**. Removing the last owner is blocked.

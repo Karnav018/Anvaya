@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 import { validateData, loginSchema } from '../lib/validation';
@@ -11,7 +11,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const next = searchParams.get('next');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +45,8 @@ export default function Login() {
         }
       );
       
-      setAuth(data.user, data.token);
-      navigate('/dashboard');
+      setAuth(data.user, data.access, data.refresh);
+      navigate(next || '/dashboard');
     } catch (err) {
       // Toast handles error message
     } finally {
@@ -96,6 +98,14 @@ export default function Login() {
             {errors.password && (
               <p className="text-red-400 text-xs mt-1">{errors.password}</p>
             )}
+            <div className="mt-2 text-right">
+              <Link
+                to="/forgot-password"
+                className="text-primary hover:text-primary/80 font-medium text-sm"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           <button
@@ -111,6 +121,15 @@ export default function Login() {
           Don't have an account?{' '}
           <Link to="/signup" className="text-primary hover:text-primary/80 font-medium">
             Sign up
+          </Link>
+        </p>
+
+        <p className="mt-4 text-center">
+          <Link
+            to="/pricing"
+            className="text-xs text-white/40 hover:text-white/70 transition-colors"
+          >
+            View plans →
           </Link>
         </p>
       </div>

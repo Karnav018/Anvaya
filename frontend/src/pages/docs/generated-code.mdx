@@ -1,0 +1,84 @@
+# Generated code
+
+Anvaya outputs a standard Node.js / Express.js project. Nothing is hidden; nothing is proprietary. Open the ZIP and you get a tree that any Express developer recognises.
+
+## Project layout
+
+```
+anvaya-project/
+  routes/
+    users.js
+    auth.js
+  models/
+    User.js
+  middleware/
+    auth.js
+    error.js
+  validators/
+    user.schema.js
+  tests/
+    users.test.js
+  server.js
+  package.json
+  .env.example
+  README.md
+```
+
+## File-by-file
+
+### `server.js`
+
+The entry point. Loads middleware, mounts routers under `/api`, and starts listening.
+
+```js
+const express = require('express');
+const app = express();
+const usersRouter = require('./routes/users');
+
+app.use(express.json());
+app.use('/api', usersRouter);
+
+const port = process.env.PORT || 3000;
+app.listen(port);
+```
+
+### `routes/*.js`
+
+One file per Route node. Each file exports a `Router` with handler functions wired to validation and auth middleware.
+
+### `models/*.js`
+
+One file per Database node, using Sequelize or Mongoose depending on the provider.
+
+### `middleware/*.js`
+
+Reusable middleware: auth, error handling, caching, upload.
+
+### `validators/*.js`
+
+Zod schemas extracted from your Schema and Validation nodes.
+
+### `tests/*.test.js`
+
+Skeleton Jest tests for every route. They run with `npm test`.
+
+### `package.json`
+
+All dependencies are pinned to exact versions. The `start` and `test` scripts are pre-configured.
+
+### `.env.example`
+
+Lists every environment variable your project reads, with placeholder values.
+
+### `README.md`
+
+Per-project README explaining how to install, run, and deploy.
+
+## Running
+
+```bash
+npm install
+node server.js
+```
+
+That's it. Nothing imports `@anvaya/runtime` — there is no Anvaya runtime.

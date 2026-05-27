@@ -55,8 +55,8 @@ export default function Signup() {
           email: validation.data.email, 
           password: validation.data.password 
         });
-        setAuth(data.user, data.token);
-        
+        setAuth(data.user, data.access, data.refresh);
+
         navigate('/dashboard');
       }
     } catch (err) {
@@ -145,6 +145,15 @@ export default function Signup() {
           Already have an account?{' '}
           <Link to="/login" className="text-primary hover:text-primary/80 font-medium">
             Log in
+          </Link>
+        </p>
+
+        <p className="mt-4 text-center">
+          <Link
+            to="/pricing"
+            className="text-xs text-white/40 hover:text-white/70 transition-colors"
+          >
+            View plans →
           </Link>
         </p>
       </div>

@@ -1,12 +1,10 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import toast from 'react-hot-toast';
 
-// Get API URL from environment variables with fallback
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// Validate API URL on startup
 if (!API_URL) {
   console.error('VITE_API_URL is not defined in environment variables');
   throw new Error('API URL configuration is missing');
@@ -14,20 +12,16 @@ if (!API_URL) {
 
 export const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000, // 30 second timeout
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  timeout: 30000,
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor: Attach auth token and start loading
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     useUIStore.getState().startRequest();
-    
-    const token = useAuthStore.getState().token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const access = useAuthStore.getState().access;
+    if (access) {
+      config.headers.Authorization = `Bearer ${access}`;
     }
     return config;
   },
@@ -37,87 +31,116 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor: Handle errors globally
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refresh = useAuthStore.getState().refresh;
+  if (!refresh) return null;
+  try {
+    const res = await axios.post(
+      `${API_URL}/auth/refresh`,
+      { refresh },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+    );
+    const access: string | undefined = res.data?.access;
+    const newRefresh: string | undefined = res.data?.refresh;
+    if (!access) return null;
+    if (newRefresh) {
+      const user = useAuthStore.getState().user;
+      useAuthStore.getState().setAuth(user as any, access, newRefresh);
+    } else {
+      useAuthStore.getState().setAccess(access);
+    }
+    return access;
+  } catch {
+    return null;
+  }
+}
+
 api.interceptors.response.use(
   (response) => {
     useUIStore.getState().endRequest();
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     useUIStore.getState().endRequest();
 
-    // Handle different error types
     if (error.code === 'ECONNABORTED') {
-      // Timeout error
       toast.error('Request timeout. Please check your connection and try again.');
-    } else if (!error.response) {
-      // Network error (no response from server)
+      return Promise.reject(error);
+    }
+    if (!error.response) {
       toast.error('Network error. Please check your internet connection.');
-    } else {
-      // HTTP error responses
-      const status = error.response.status;
-      const data = error.response.data as any;
+      return Promise.reject(error);
+    }
 
-      switch (status) {
-        case 400:
-          // Bad Request - show specific error message if available
-          toast.error(data?.detail || 'Invalid request. Please check your input.');
-          break;
+    const status = error.response.status;
+    const data = error.response.data as any;
+    const config = error.config as (AxiosRequestConfig & { _retried?: boolean }) | undefined;
 
-        case 401:
-          // Unauthorized - logout and redirect to login
-          toast.error('Session expired. Please login again.');
-          useAuthStore.getState().logout();
-          break;
-
-        case 403:
-          // Forbidden - user doesn't have permission
-          toast.error('You don\'t have permission to perform this action.');
-          break;
-
-        case 404:
-          // Not Found
-          toast.error(data?.detail || 'Resource not found.');
-          break;
-
-        case 409:
-          // Conflict (e.g., duplicate resource)
-          toast.error(data?.detail || 'This resource already exists.');
-          break;
-
-        case 422:
-          // Validation Error (FastAPI)
-          const validationErrors = data?.detail;
-          if (Array.isArray(validationErrors)) {
-            const errorMessages = validationErrors.map((err: any) => 
-              `${err.loc?.join(' → ')}: ${err.msg}`
-            ).join('\n');
-            toast.error(errorMessages || 'Validation error.');
-          } else {
-            toast.error(data?.detail || 'Validation error.');
-          }
-          break;
-
-        case 429:
-          // Rate Limit Exceeded
-          toast.error('Too many requests. Please slow down and try again later.');
-          break;
-
-        case 500:
-        case 502:
-        case 503:
-        case 504:
-          // Server errors
-          toast.error('Server error. Please try again later.');
-          console.error('Server error:', error.response);
-          break;
-
-        default:
-          // Generic error
-          toast.error(data?.detail || 'An unexpected error occurred.');
+    if (status === 401 && config && !config._retried) {
+      config._retried = true;
+      if (!refreshPromise) refreshPromise = refreshAccessToken().finally(() => (refreshPromise = null));
+      const newAccess = await refreshPromise;
+      if (newAccess) {
+        config.headers = { ...(config.headers || {}), Authorization: `Bearer ${newAccess}` } as any;
+        return api.request(config);
       }
+      toast.error('Session expired. Please login again.');
+      useAuthStore.getState().logout();
+      return Promise.reject(error);
+    }
+
+    switch (status) {
+      case 400:
+        toast.error(extractDetail(data) || 'Invalid request. Please check your input.');
+        break;
+      case 401:
+        toast.error('Session expired. Please login again.');
+        useAuthStore.getState().logout();
+        break;
+      case 403:
+        toast.error("You don't have permission to perform this action.");
+        break;
+      case 404:
+        toast.error(extractDetail(data) || 'Resource not found.');
+        break;
+      case 409:
+        toast.error(extractDetail(data) || 'This resource already exists.');
+        break;
+      case 422: {
+        const validationErrors = data?.detail;
+        if (Array.isArray(validationErrors)) {
+          const msg = validationErrors.map((err: any) => `${err.loc?.join(' → ')}: ${err.msg}`).join('\n');
+          toast.error(msg || 'Validation error.');
+        } else {
+          toast.error(extractDetail(data) || 'Validation error.');
+        }
+        break;
+      }
+      case 429:
+        toast.error(extractDetail(data) || 'Too many requests. Please slow down and try again later.');
+        break;
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        toast.error('Server error. Please try again later.');
+        console.error('Server error:', error.response);
+        break;
+      default:
+        toast.error(extractDetail(data) || 'An unexpected error occurred.');
     }
 
     return Promise.reject(error);
   }
 );
+
+function extractDetail(data: any): string | undefined {
+  if (!data) return undefined;
+  if (typeof data.detail === 'string') return data.detail;
+  if (data.detail && typeof data.detail === 'object' && typeof data.detail.message === 'string') {
+    return data.detail.message;
+  }
+  return undefined;
+}

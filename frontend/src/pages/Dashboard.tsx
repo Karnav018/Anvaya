@@ -4,6 +4,7 @@ import { ProjectCard } from '../components/dashboard/ProjectCard';
 import { CreateProjectModal } from '../components/dashboard/CreateProjectModal';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { api } from '../lib/api';
+import { useOrgStore } from '../store/orgStore';
 import type { Project } from '../lib/types';
 import { Plus, Rocket } from 'lucide-react';
 
@@ -11,10 +12,15 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const orgSlug = useOrgStore((s) => s.activeOrgSlug);
 
   const fetchProjects = async () => {
+    if (!orgSlug) {
+      setLoading(false);
+      return;
+    }
     try {
-      const { data } = await api.get('/projects');
+      const { data } = await api.get(`/o/${orgSlug}/projects`);
       setProjects(data);
     } catch (err) {
       console.error('Failed to load projects');
@@ -86,11 +92,14 @@ export default function Dashboard() {
         )}
       </main>
 
-      <CreateProjectModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchProjects}
-      />
+      {orgSlug && (
+        <CreateProjectModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={fetchProjects}
+          orgSlug={orgSlug}
+        />
+      )}
     </div>
   );
 }
