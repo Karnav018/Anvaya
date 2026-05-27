@@ -19,10 +19,12 @@ services:
   - type: web
     name: anvaya-backend
     runtime: docker
-    repo: https://gitlab.com/REPLACE_ME/anvaya     # update after migrating to GitLab
-    branch: main
+    # repo + branch are inferred from the Render OAuth connection at Blueprint
+    # creation time. Don't pin them here — keeps the YAML portable across
+    # GitHub / GitLab migrations.
     rootDir: backend
     dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free                                       # spins down after 15min idle
     region: oregon                                   # change to your closest region
     healthCheckPath: /health
