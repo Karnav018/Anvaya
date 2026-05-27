@@ -6,10 +6,28 @@ frontend/.env.local
 
 # Python
 backend/venv
-backend/__pycache__
+backend/.venv
+backend-legacy/venv
+backend-legacy/.venv
+backend-legacy/.env
 backend/.env
 backend/*.zip
-backend/*.pyc
+**/__pycache__/
+**/*.pyc
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+backend/staticfiles/
+
+# Test / E2E
+frontend/playwright-report/
+frontend/test-results/
+
+# Fly.io
+.fly/
+
+# Docker
+.dockerignore.bak
 
 # OS
 .DS_Store

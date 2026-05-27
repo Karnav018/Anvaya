@@ -14,36 +14,68 @@ export interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
-  setAuth: (user: User, token: string) => void;
+  access: string | null;
+  refresh: string | null;
+  setAuth: (user: User, access: string, refresh: string) => void;
+  setAccess: (access: string) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
+}
+
+// Dynamically import orgStore to avoid circular imports between
+// authStore <-> orgStore (orgStore imports from authStore for the token).
+async function syncOrgsAfterAuth(): Promise<void> {
+  try {
+    const mod = await import('./orgStore');
+    await mod.useOrgStore.getState().loadOrgs();
+  } catch (err) {
+    console.error('Failed to sync orgs after auth:', err);
+  }
+}
+
+async function clearOrgsAfterLogout(): Promise<void> {
+  try {
+    const mod = await import('./orgStore');
+    mod.useOrgStore.getState().reset();
+  } catch (err) {
+    console.error('Failed to clear orgs after logout:', err);
+  }
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
-      setAuth: (user, token) => set({ user, token }),
-      logout: () => set({ user: null, token: null }),
+      access: null,
+      refresh: null,
+      setAuth: (user, access, refresh) => {
+        set({ user, access, refresh });
+        // Fire-and-forget: refresh org list when auth changes.
+        void syncOrgsAfterAuth();
+      },
+      setAccess: (access) => set({ access }),
+      logout: () => {
+        set({ user: null, access: null, refresh: null });
+        void clearOrgsAfterLogout();
+      },
       refreshUser: async () => {
         try {
-          // If we have a token but no user, or just want to fresh our data
-          if (get().token) {
+          if (get().access) {
             const res = await apiInstance.get('/auth/me', {
-              headers: { Authorization: `Bearer ${get().token}` }
+              headers: { Authorization: `Bearer ${get().access}` },
             });
             set({ user: res.data });
           }
         } catch (error) {
-          console.error("Failed to refresh user:", error);
-          set({ user: null, token: null });
+          console.error('Failed to refresh user:', error);
+          set({ user: null, access: null, refresh: null });
+          void clearOrgsAfterLogout();
         }
       },
     }),
     {
       name: 'anvaya-auth',
+      version: 2,
     }
   )
 );

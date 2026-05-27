@@ -1,10 +1,12 @@
 import { useCanvasStore } from '../../store/canvasStore';
-import { Settings2, Trash2, HelpCircle, Plus } from 'lucide-react';
+import { useCanEdit } from '../../hooks/useRole';
+import { Settings2, Trash2, HelpCircle, Plus, Lock } from 'lucide-react';
 import { useState } from 'react';
 
 export function ConfigPanel() {
   const { selectedNode, updateNodeData, deleteNode } = useCanvasStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const canEdit = useCanEdit();
 
   if (!selectedNode) {
     return (
@@ -25,6 +27,7 @@ export function ConfigPanel() {
   const { type, data, id } = selectedNode;
 
   const handleChange = (field: string, value: any) => {
+    if (!canEdit) return;
     // For simple text inputs, don't over-sanitize as it can break normal editing
     // Only sanitize when absolutely necessary (e.g., HTML content)
     const processedValue = typeof value === 'string' ? value.trim() : value;
@@ -32,6 +35,7 @@ export function ConfigPanel() {
   };
 
   const handleDelete = () => {
+    if (!canEdit) return;
     deleteNode(id);
     setShowDeleteConfirm(false);
   };
@@ -1091,8 +1095,13 @@ export function ConfigPanel() {
 
       {/* Delete Button */}
       <div className="p-5 border-t border-[#1c2028] bg-[#0c0e14]">
-        {!showDeleteConfirm ? (
-          <button 
+        {!canEdit ? (
+          <div className="w-full py-2.5 px-4 rounded-lg border border-white/10 bg-white/5 text-white/50 text-xs font-medium flex items-center justify-center gap-2">
+            <Lock className="w-3.5 h-3.5" />
+            View-only access
+          </div>
+        ) : !showDeleteConfirm ? (
+          <button
             onClick={() => setShowDeleteConfirm(true)}
             className="w-full py-2.5 px-4 rounded-lg border border-rose-500/20 bg-rose-500/5 text-rose-400 text-xs font-semibold hover:bg-rose-500/10 hover:border-rose-500/30 transition-all flex items-center justify-center gap-2"
           >

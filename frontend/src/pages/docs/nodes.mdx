@@ -1,0 +1,36 @@
+# Node reference
+
+Anvaya ships with **14 node types** that compose into a working Express.js application. Every node has typed inputs and outputs and generates code into a specific file.
+
+## Catalog
+
+| Node | Purpose | Key data fields | Generates |
+| --- | --- | --- | --- |
+| **Route** | Defines an HTTP endpoint. | `method`, `path`, `description` | `routes/<name>.js` |
+| **Auth** | Gates a route with JWT or session. | `strategy`, `secret_env_var` | `middleware/auth.js` |
+| **Database** | Reads or writes via a model. | `model`, `action`, `provider` | `models/<Model>.js` |
+| **Schema** | Defines a request or model schema. | `fields[]`, `name` | `schemas/<name>.js` |
+| **Validation** | Validates `req.body` / `req.query`. | `schema_ref`, `target` | inline middleware |
+| **Middleware** | Generic Express middleware slot. | `kind`, `config` | `middleware/<name>.js` |
+| **Response** | Terminal node — sends a response. | `status`, `shape` | `res.status().json()` |
+| **Fetch** | Outbound HTTP call. | `url`, `method`, `headers` | inline `fetch()` |
+| **Cache** | Wraps a route with Redis caching. | `ttl_seconds`, `key_template` | `middleware/cache.js` |
+| **Email** | Sends transactional mail. | `provider`, `template_id` | `services/email.js` |
+| **Upload** | Multipart upload handler. | `storage`, `max_size` | `middleware/upload.js` |
+| **AI** | Calls an LLM provider. | `provider`, `model`, `prompt_template` | `services/ai.js` |
+| **Payment** | Stripe charge or checkout. | `mode`, `currency` | `services/payment.js` |
+| **Error Handler** | Catches and formats errors. | `format`, `log_level` | `middleware/error.js` |
+
+## Inputs and outputs
+
+Every node has at most one input handle (left side) and one output handle (right side). A graph is valid when:
+
+1. Every chain begins with a **Route** node.
+2. Every chain ends with a **Response** node.
+3. Each node's required data fields are filled in.
+
+The editor surfaces invalid graphs with a red outline on the offending node — you can't generate until those are resolved.
+
+## Data fields
+
+Open a node's config panel by clicking it on the canvas. Required fields are marked with a red asterisk. Optional fields fall back to sensible defaults.

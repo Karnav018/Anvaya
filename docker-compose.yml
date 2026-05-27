@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: anvaya-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: anvaya
+      POSTGRES_PASSWORD: anvaya_dev_password
+      POSTGRES_DB: anvaya
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anvaya -d anvaya"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - anvaya
+
+  redis:
+    image: redis:7-alpine
+    container_name: anvaya-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - anvaya
+
+  backend:
+    build: ./backend
+    container_name: anvaya-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgres://anvaya:anvaya_dev_password@postgres:5432/anvaya
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             gunicorn anvaya.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile - --error-logfile -"
+    networks:
+      - anvaya
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: "http://localhost:8000"
+    container_name: anvaya-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    networks:
+      - anvaya
+
+volumes:
+  postgres_data:
+    name: anvaya_postgres_data
+  redis_data:
+    name: anvaya_redis_data
+
+networks:
+  anvaya:
+    name: anvaya
+    driver: bridge

@@ -5,6 +5,7 @@ import { Navbar } from '../components/layout/Navbar';
 import { useCanvasStore } from '../store/canvasStore';
 import { useCommonShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useDebounce } from '../hooks/useDebounce';
+import { useCanEdit } from '../hooks/useRole';
 import { api } from '../lib/api';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -16,10 +17,11 @@ const AnvayaCanvas = lazy(() => import('../components/canvas/AnvayaCanvas').then
 const CanvasToolbar = lazy(() => import('../components/canvas/CanvasToolbar').then(module => ({ default: module.CanvasToolbar })));
 
 export default function Editor() {
-  const { projectId } = useParams();
-  const { 
-    setProjectId, 
-    loadBlueprint, 
+  const { projectId, orgSlug } = useParams<{ projectId: string; orgSlug: string }>();
+  const canEdit = useCanEdit();
+  const {
+    setProjectId,
+    loadBlueprint,
     getBlueprintPayload,
     undo,
     redo,
@@ -28,20 +30,22 @@ export default function Editor() {
     nodes,
     edges,
   } = useCanvasStore();
-  
+
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (projectId) {
+    if (projectId && orgSlug) {
       setProjectId(projectId);
       loadSavedBlueprint(projectId);
     }
-  }, [projectId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, orgSlug]);
 
   const loadSavedBlueprint = async (pId: string) => {
+    if (!orgSlug) return;
     try {
-      const { data } = await api.get(`/blueprints/${pId}`);
+      const { data } = await api.get(`/o/${orgSlug}/blueprints/${pId}`);
       loadBlueprint(data.canvas_json);
       setSaveStatus('saved');
       setLastSaved(new Date());
@@ -51,14 +55,18 @@ export default function Editor() {
   };
 
   const saveBlueprint = useCallback(async (showToast = true) => {
-    if (!projectId) return;
+    if (!projectId || !orgSlug) return;
+    if (!canEdit) {
+      if (showToast) toast.error('You have view-only access to this workspace.');
+      return;
+    }
     try {
       setSaveStatus('saving');
       const payload = getBlueprintPayload();
-      
+
       if (showToast) {
         await toast.promise(
-          api.post(`/blueprints/${projectId}`, payload),
+          api.post(`/o/${orgSlug}/blueprints/${projectId}`, payload),
           {
             loading: 'Saving...',
             success: '✅ Blueprint saved',
@@ -66,9 +74,9 @@ export default function Editor() {
           }
         );
       } else {
-        await api.post(`/blueprints/${projectId}`, payload);
+        await api.post(`/o/${orgSlug}/blueprints/${projectId}`, payload);
       }
-      
+
       setSaveStatus('saved');
       setLastSaved(new Date());
     } catch {
@@ -77,47 +85,48 @@ export default function Editor() {
         toast.error('Failed to save blueprint');
       }
     }
-  }, [projectId, getBlueprintPayload]);
+  }, [projectId, orgSlug, canEdit, getBlueprintPayload]);
 
-  // Auto-save (debounced, without toast)
+  // Auto-save (debounced, without toast) — disabled for viewers
   const autoSave = useDebounce(() => {
-    if (projectId && saveStatus !== 'saving') {
+    if (projectId && saveStatus !== 'saving' && canEdit) {
       saveBlueprint(false);
     }
   }, 30000); // 30 seconds
 
   // Trigger auto-save when nodes or edges change
   useEffect(() => {
-    if (projectId && lastSaved) {
+    if (projectId && lastSaved && canEdit) {
       setSaveStatus('unsaved');
       autoSave();
     }
   }, [nodes, edges]);
 
   const handleDelete = useCallback(() => {
+    if (!canEdit) return;
     if (selectedNode) {
       deleteNode(selectedNode.id);
       toast.success('Node deleted');
     }
-  }, [selectedNode, deleteNode]);
+  }, [selectedNode, deleteNode, canEdit]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (no-ops if viewer)
   useCommonShortcuts({
     onSave: () => saveBlueprint(true),
-    onUndo: undo,
-    onRedo: redo,
+    onUndo: canEdit ? undo : () => {},
+    onRedo: canEdit ? redo : () => {},
     onDelete: handleDelete,
   });
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden relative">
       <Navbar saveStatus={saveStatus} lastSaved={lastSaved} />
-      
+
       <div className="flex-1 flex overflow-hidden">
         <Suspense fallback={<div className="w-64 bg-[#10131a] border-r border-[#1c2028] flex items-center justify-center"><LoadingSpinner size="sm" /></div>}>
           <BlockPalette />
         </Suspense>
-        
+
         <main className="flex-1 relative bg-[#0a0a0f]">
           <ReactFlowProvider>
             <Suspense fallback={<div className="absolute top-4 left-4 z-50"><LoadingSpinner size="sm" /></div>}>
@@ -128,7 +137,7 @@ export default function Editor() {
             </Suspense>
           </ReactFlowProvider>
         </main>
-        
+
         <Suspense fallback={<div className="w-80 bg-[#10131a] border-l border-[#1c2028] flex items-center justify-center"><LoadingSpinner size="sm" /></div>}>
           <ConfigPanel />
         </Suspense>

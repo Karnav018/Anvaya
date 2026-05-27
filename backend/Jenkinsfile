@@ -1,0 +1,114 @@
+// Anvaya backend CI/CD pipeline.
+//
+// Prerequisites on the Jenkins controller:
+//   - Tool: Python 3.12 (configured via 'pyenv' or Jenkins tool installer)
+//   - Tool: Docker (the agent must have docker available)
+//   - Credentials (Manage Jenkins → Credentials):
+//       * RENDER_DEPLOY_HOOK_URL — secret text, the per-service deploy hook
+//         URL from Render (Service → Settings → Deploy Hook)
+//       * (optional) SENTRY_AUTH_TOKEN for source-map uploads
+//
+// Triggers: this pipeline runs on push to any branch via the GitLab webhook
+// plugin OR on a multibranch pipeline scan. Only `main` deploys to production.
+
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    timeout(time: 20, unit: 'MINUTES')
+    disableConcurrentBuilds()
+    ansiColor('xterm')
+  }
+
+  environment {
+    DJANGO_SETTINGS_MODULE = 'anvaya.settings.dev'
+    DJANGO_SECRET_KEY      = 'ci-secret-key-32-chars-padding-pad-pad'
+    JWT_SIGNING_KEY        = 'ci-jwt-signing-key-32-chars-padding-pad'
+    PIP_CACHE_DIR          = "${WORKSPACE}/.cache/pip"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Setup Python') {
+      steps {
+        dir('backend') {
+          sh '''
+            python3.12 -m venv .venv
+            .venv/bin/pip install --upgrade pip -q
+            .venv/bin/pip install -e ".[dev]" -q
+          '''
+        }
+      }
+    }
+
+    stage('Lint') {
+      steps {
+        dir('backend') {
+          sh '.venv/bin/ruff check .'
+        }
+      }
+    }
+
+    stage('Test') {
+      // Postgres + Redis service containers. Adjust if you use the
+      // Kubernetes Jenkins plugin — these `docker run` calls assume a
+      // local docker daemon on the agent.
+      steps {
+        script {
+          docker.image('postgres:16-alpine').withRun(
+            "-e POSTGRES_USER=anvaya -e POSTGRES_PASSWORD=anvaya -e POSTGRES_DB=anvaya"
+          ) { pg ->
+            docker.image('redis:7-alpine').withRun() { rd ->
+              sh """
+                cd backend
+                export DATABASE_URL=postgres://anvaya:anvaya@\$(docker inspect -f '{{.NetworkSettings.IPAddress}}' ${pg.id}):5432/anvaya
+                export REDIS_URL=redis://\$(docker inspect -f '{{.NetworkSettings.IPAddress}}' ${rd.id}):6379/0
+                # Wait for Postgres
+                until docker exec ${pg.id} pg_isready -U anvaya >/dev/null 2>&1; do sleep 1; done
+                .venv/bin/python manage.py migrate --noinput
+                .venv/bin/python -m pytest -q || [ \$? -eq 5 ]
+              """
+            }
+          }
+        }
+      }
+    }
+
+    stage('Build Docker image') {
+      steps {
+        dir('backend') {
+          sh "docker build -t anvaya-backend:${env.GIT_COMMIT.take(7)} ."
+        }
+      }
+    }
+
+    stage('Deploy to Render (main only)') {
+      when { branch 'main' }
+      steps {
+        // Render auto-builds from the repo on push, but we trigger an
+        // explicit deploy hook so Jenkins build status maps 1:1 to a
+        // Render deploy. Render runs the preDeploy migration + Docker
+        // build server-side; we just kick it off.
+        withCredentials([string(credentialsId: 'RENDER_DEPLOY_HOOK_URL', variable: 'RENDER_HOOK')]) {
+          sh 'curl -fsSL -X POST "$RENDER_HOOK" -d "{}"'
+        }
+      }
+    }
+  }
+
+  post {
+    failure {
+      // Wire whichever notifier you use (Slack/Discord/email).
+      echo "Build ${env.BUILD_NUMBER} failed on ${env.BRANCH_NAME} (${env.GIT_COMMIT.take(7)})."
+    }
+    always {
+      cleanWs(notFailBuild: true)
+    }
+  }
+}

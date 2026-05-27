@@ -1,0 +1,47 @@
+# Quickstart
+
+Welcome to Anvaya. This guide walks you from sign-up to a running Express server in about five minutes.
+
+## 1. Sign up
+
+Head to the [sign-up page](/signup) and create an account. The Free plan is on by default — no card required.
+
+## 2. Create an organization
+
+After verifying your email, Anvaya prompts you to name your workspace. Pick anything; you can rename it later from **Settings → Organization**.
+
+## 3. Build your first canvas
+
+From the project dashboard, click **New project**, then drag two nodes onto the canvas:
+
+- A **Route** node — set its method to `GET` and the path to `/users`
+- A **Response** node — set its status to `200`
+
+Connect the two with an edge. That is the simplest valid Anvaya graph.
+
+## 4. Generate the project
+
+Click **Generate**. Anvaya produces a runnable Express.js project on the right-hand pane. Click **Download ZIP**.
+
+## 5. Run locally
+
+```bash
+unzip anvaya-project.zip
+cd anvaya-project
+npm install
+node server.js
+```
+
+You should see:
+
+```
+Server running on http://localhost:3000
+```
+
+Hit `http://localhost:3000/users` and the generated handler responds with a `200`.
+
+## What next?
+
+- Read the [Node reference](/docs/nodes) to see what each block can do
+- Explore [Generated code](/docs/generated-code) to understand the project layout
+- Set up [Teams & roles](/docs/teams) when you're ready to invite collaborators

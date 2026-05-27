@@ -1,0 +1,9 @@
+{{ inviter_name }} has invited you to join {{ org_name }} on Anvaya as a {{ role }}.
+
+Accept the invitation:
+
+{{ invite_url }}
+
+This invitation expires in 7 days. If you weren't expecting this email, you can safely ignore it.
+
+— The Anvaya team

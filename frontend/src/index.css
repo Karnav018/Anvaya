@@ -3,14 +3,164 @@
 @theme {
   --color-background: #0a0a0f;
   --color-surface: #12121a;
+  --color-surface-low: #0e0e13;
+  --color-surface-high: #1b1b20;
+  --color-surface-elevated: #1f1f25;
+  --color-surface-bright: #2a292f;
   --color-border: #1e1e2e;
+  --color-border-strong: #262629;
+  --color-outline: #464554;
+  --color-on-surface: #e4e1e9;
+  --color-on-surface-muted: #c7c4d7;
+  --color-on-surface-faint: #908fa0;
   --color-primary: #6366f1;
+  --color-primary-glow: #a3a6ff;
+  --color-primary-deep: #494bd6;
+  --color-tertiary: #ffb783;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-display: 64px;
+  --text-display--line-height: 72px;
+  --text-display--letter-spacing: -0.04em;
+  --text-display--font-weight: 700;
 }
 
 @layer base {
   body {
-    @apply bg-background text-white antialiased font-sans;
+    @apply bg-background text-on-surface antialiased font-sans;
   }
+}
+
+/* Docs (MDX) prose styling — scoped via .docs-prose */
+.docs-prose h1 {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  color: #ffffff;
+}
+.docs-prose h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #1e1e2e;
+  color: #ffffff;
+}
+.docs-prose h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: #ffffff;
+}
+.docs-prose p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.65;
+  margin-bottom: 1rem;
+}
+.docs-prose a {
+  color: #6366f1;
+}
+.docs-prose a:hover {
+  text-decoration: underline;
+}
+.docs-prose ul,
+.docs-prose ol {
+  list-style-position: inside;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  line-height: 1.65;
+}
+.docs-prose ul {
+  list-style-type: disc;
+}
+.docs-prose ol {
+  list-style-type: decimal;
+}
+.docs-prose li {
+  margin-bottom: 0.25rem;
+}
+.docs-prose code {
+  background: #12121a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #6366f1;
+}
+.docs-prose pre {
+  background: #0f1218;
+  border: 1px solid #1e1e2e;
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+.docs-prose pre code {
+  background: transparent;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.docs-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 14px;
+}
+.docs-prose thead {
+  background: #12121a;
+}
+.docs-prose th,
+.docs-prose td {
+  border: 1px solid #1e1e2e;
+  padding: 8px 12px;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.75);
+}
+.docs-prose th {
+  font-weight: 600;
+  color: #ffffff;
+}
+.docs-prose blockquote {
+  border-left: 3px solid #6366f1;
+  padding-left: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 1rem 0;
+  font-style: italic;
+}
+.docs-prose hr {
+  border-color: #1e1e2e;
+  margin: 2rem 0;
+}
+
+/* Landing page utilities */
+.lp-hero-gradient {
+  background: radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.18) 0%, rgba(10, 10, 15, 0) 60%);
+}
+
+.lp-dot-grid {
+  background-image: radial-gradient(rgba(99, 102, 241, 0.35) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.lp-cta-glow {
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.25);
+}
+
+.lp-section-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.lp-section-scroll::-webkit-scrollbar-thumb {
+  background: #464554;
+  border-radius: 10px;
 }
 
 /* Enhanced Input Styling for Config Panel */

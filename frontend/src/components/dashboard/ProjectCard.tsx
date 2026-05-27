@@ -1,7 +1,9 @@
 import { Calendar, ChevronRight, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import type { Project } from '../../lib/types';
 import { api } from '../../lib/api';
+import { useOrgStore } from '../../store/orgStore';
+import { useCanEdit } from '../../hooks/useRole';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -13,10 +15,14 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, onDelete }: ProjectCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { orgSlug: paramSlug } = useParams<{ orgSlug: string }>();
+  const fallbackSlug = useOrgStore((s) => s.activeOrgSlug);
+  const orgSlug = paramSlug ?? fallbackSlug ?? '';
+  const canEdit = useCanEdit();
 
   const handleDelete = async () => {
     try {
-      await toast.promise(api.delete(`/projects/${project.id}`), {
+      await toast.promise(api.delete(`/o/${orgSlug}/projects/${project.id}`), {
         loading: 'Deleting project...',
         success: 'Project deleted',
         error: 'Failed to delete project',
@@ -36,7 +42,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
   return (
     <>
       <Link
-        to={`/editor/${project.id}`}
+        to={`/o/${orgSlug}/editor/${project.id}`}
         className="group bg-surface border border-border hover:border-primary/50 p-6 rounded-2xl transition-all duration-300 hover:shadow-[0_0_30px_-10px_rgba(99,102,241,0.3)] flex flex-col justify-between block relative"
       >
         <div>
@@ -44,12 +50,14 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
             <h3 className="font-semibold text-lg text-white/90 group-hover:text-primary transition-colors">
               {project.name}
             </h3>
-            <button
-              onClick={handleTrashClick}
-              className="text-white/20 hover:text-red-400 hover:bg-red-400/10 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {canEdit && (
+              <button
+                onClick={handleTrashClick}
+                className="text-white/20 hover:text-red-400 hover:bg-red-400/10 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <p className="text-sm text-white/60 line-clamp-2">
             {project.description || 'No description provided.'}
