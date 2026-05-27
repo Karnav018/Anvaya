@@ -60,6 +60,8 @@ COPY --chown=anvaya:anvaya anvaya ./anvaya
 COPY --chown=anvaya:anvaya apps ./apps
 COPY --chown=anvaya:anvaya manage.py ./
 COPY --chown=anvaya:anvaya pyproject.toml ./
+COPY --chown=anvaya:anvaya entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
 # Collected static from the builder stage.
 COPY --from=builder --chown=anvaya:anvaya /src/staticfiles ./staticfiles
@@ -68,4 +70,7 @@ USER anvaya
 
 EXPOSE 8000
 
-CMD ["gunicorn", "anvaya.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--access-logfile", "-", "--error-logfile", "-"]
+# Entrypoint runs migrate, then execs gunicorn. Render's dockerCommand
+# overrides CMD/ENTRYPOINT, so render.yaml MUST NOT set dockerCommand for
+# this entrypoint to take effect.
+ENTRYPOINT ["./entrypoint.sh"]

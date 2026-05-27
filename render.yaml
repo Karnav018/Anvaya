@@ -37,16 +37,10 @@ services:
     healthCheckPath: /health
     autoDeploy: true
 
-    # Free tier doesn't allow `preDeployCommand`. Wrap CMD so migrations run
-    # before gunicorn boots on every container start. `exec` replaces the
-    # shell with gunicorn so SIGTERM reaches it for graceful shutdown.
-    dockerCommand: >
-      sh -c "python manage.py migrate --noinput &&
-             exec gunicorn anvaya.wsgi:application
-             --bind 0.0.0.0:$PORT
-             --workers 3
-             --access-logfile -
-             --error-logfile -"
+    # Free tier doesn't allow `preDeployCommand`. Migrations run via the
+    # container's entrypoint.sh script (which then exec's gunicorn). Don't
+    # set dockerCommand here — it would override the ENTRYPOINT and we'd
+    # lose the migrate step.
 
     envVars:
       # ── Static values (safe to commit) ────────────────────────────────
