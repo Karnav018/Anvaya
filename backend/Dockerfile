@@ -51,6 +51,12 @@ RUN apt-get update \
 
 WORKDIR /app
 
+# Make /app writable by anvaya. WORKDIR creates the dir as root:root,
+# but gunicorn 23+ writes a control-server socket to $HOME/.gunicorn,
+# and $HOME == /app for this user. Without this chown, every boot logs
+# "Control server error: [Errno 13] Permission denied: '/app/.gunicorn'".
+RUN chown anvaya:anvaya /app
+
 # Bring installed packages and their console scripts into the runtime image.
 COPY --from=builder /install /usr/local/lib/python3.12/site-packages
 COPY --from=builder /install/bin/ /usr/local/bin/
