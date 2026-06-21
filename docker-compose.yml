@@ -1,0 +1,36 @@
+# Anvaya — local dev infrastructure (Postgres)
+# Usage: docker compose up -d
+# Data persists in the named volume `anvaya_pgdata` across restarts.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: anvaya-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: anvaya
+      POSTGRES_PASSWORD: anvaya_dev_password
+      POSTGRES_DB: anvaya
+    ports:
+      - "5432:5432"
+    volumes:
+      - anvaya_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anvaya -d anvaya"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Lightweight DB UI to see everything that's stored — http://localhost:8080
+  # (System: PostgreSQL, Server: postgres, User/Pass/DB: anvaya / anvaya_dev_password / anvaya)
+  adminer:
+    image: adminer:latest
+    container_name: anvaya-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  anvaya_pgdata:

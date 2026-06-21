@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = "0" * 64  # 32-byte hex — override in .env
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
+    # DB SSL: True=require, False=off, None=auto (infer from URL / host)
+    DATABASE_SSL: bool | None = None
 
     class Config:
         env_file = ".env"

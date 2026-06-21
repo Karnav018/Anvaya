@@ -4,16 +4,36 @@ from app.config import settings
 pool: asyncpg.Pool | None = None
 
 
+def _resolve_db_ssl():
+    """Decide whether to use SSL for the DB connection.
+
+    Priority:
+      1. explicit DATABASE_SSL setting (True -> require, False -> off)
+      2. sslmode in the connection URL
+      3. local hosts -> no SSL; remote/managed providers -> require SSL
+    """
+    if settings.DATABASE_SSL is not None:
+        return "require" if settings.DATABASE_SSL else None
+    url = settings.DATABASE_URL.lower()
+    if "sslmode=require" in url or "sslmode=verify" in url:
+        return "require"
+    if "sslmode=disable" in url:
+        return None
+    if "localhost" in url or "127.0.0.1" in url:
+        return None
+    # Remote/managed Postgres (Neon, Supabase, RDS, Render, ...) needs SSL
+    return "require"
+
+
 async def init_db() -> None:
     global pool
     try:
-        # Use SSL for neon.tech databases
         pool = await asyncpg.create_pool(
             dsn=settings.DATABASE_URL,
             min_size=1,
             max_size=5,
             command_timeout=30,
-            ssl="require" if "neon.tech" in settings.DATABASE_URL else None
+            ssl=_resolve_db_ssl(),
         )
         await run_migrations()
         print("Database connected successfully")
