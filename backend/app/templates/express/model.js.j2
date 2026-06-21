@@ -10,7 +10,7 @@ const {{ model }} = sequelize.define('{{ model }}', {
   {%- if schema and schema.fields %}
   {%- for field in schema.fields %}
   {{ field.name }}: {
-    type: DataTypes.{% if field.type == 'string' %}STRING{% elif field.type == 'integer' %}INTEGER{% elif field.type == 'boolean' %}BOOLEAN{% elif field.type == 'datetime' %}DATE{% elif field.type == 'text' %}TEXT{% elif field.type == 'json' %}JSONB{% else %}STRING{% endif %},
+    type: DataTypes.{% if field.type == 'string' %}STRING{% elif field.type == 'integer' %}INTEGER{% elif field.type == 'boolean' %}BOOLEAN{% elif field.type == 'datetime' %}DATE{% elif field.type == 'text' %}TEXT{% elif field.type == 'json' %}JSON{% else %}STRING{% endif %},
     {%- if not field.required %}
     allowNull: true,
     {%- else %}

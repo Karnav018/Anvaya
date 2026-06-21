@@ -1,0 +1,17 @@
+// Central model registry — loads every model and wires up associations.
+const { sequelize } = require('../db');
+
+const models = {
+{% for model in models %}
+  {{ model }}: require('./{{ model }}'),
+{% endfor %}
+};
+
+// Wire relationships defined via `Model.associate(models)`.
+Object.values(models).forEach((model) => {
+  if (typeof model.associate === 'function') {
+    model.associate(models);
+  }
+});
+
+module.exports = { sequelize, ...models };

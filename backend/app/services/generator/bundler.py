@@ -43,7 +43,7 @@ def bundle_project(ast: ProjectAST) -> bytes:
         # server.js
         zf.writestr(
             f"{root}/server.js",
-            _render("server.js.j2", routes=ast.routes),
+            _render("server.js.j2", routes=ast.routes, has_database=ast.has_database),
         )
 
         # .env.example and .env defaults
@@ -115,10 +115,13 @@ def bundle_project(ast: ProjectAST) -> bytes:
                 _render("tests/route.test.js.j2", route=route),
             )
 
-        # db.js (database connection) — only if DB nodes used
+        # db.js (connection) + models/index.js (registry + associations) — only if DB used
         if ast.has_database:
-            db_js = _build_db_js()
-            zf.writestr(f"{root}/db.js", db_js)
+            zf.writestr(f"{root}/db.js", _render("db.js.j2"))
+            zf.writestr(
+                f"{root}/models/index.js",
+                _render("models/index.js.j2", models=ast.models),
+            )
 
     buf.seek(0)
     return buf.read()
@@ -166,29 +169,4 @@ npm run dev
 
 ## Environment Variables
 {env_docs}
-"""
-
-
-def _build_db_js() -> str:
-    return """const { Sequelize } = require('sequelize');
-require('dotenv').config();
-
-const dbUrl = process.env.DATABASE_URL || 'postgres://user:pass@localhost:5432/anvayadb';
-const sequelize = new Sequelize(String(dbUrl), {
-  dialect: 'postgres',
-  logging: false,
-  dialectOptions: {
-    // Uncomment when deploying to production with SSL
-    // ssl: { require: true, rejectUnauthorized: false },
-  },
-});
-
-sequelize.authenticate()
-  .then(() => console.log('✅ Database connected'))
-  .catch(err => {
-    console.error('⚠️ Database connection warning:', err.message);
-    console.error('👉 Please update DATABASE_URL in your .env file with a valid PostgreSQL URI.');
-  });
-
-module.exports = { sequelize };
 """
